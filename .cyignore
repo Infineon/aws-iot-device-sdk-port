@@ -1,3 +1,5 @@
+docs
+
 $(SEARCH_aws-iot-device-sdk-embedded-C)/demos
 $(SEARCH_aws-iot-device-sdk-embedded-C)/tools
 $(SEARCH_aws-iot-device-sdk-embedded-C)/docs

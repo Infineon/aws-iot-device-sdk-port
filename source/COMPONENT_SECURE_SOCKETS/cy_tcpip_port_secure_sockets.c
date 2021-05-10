@@ -1,10 +1,10 @@
 /*
- * Copyright 2020, Cypress Semiconductor Corporation or a subsidiary of
- * Cypress Semiconductor Corporation. All Rights Reserved.
+ * Copyright 2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
- * materials ("Software"), is owned by Cypress Semiconductor Corporation
- * or one of its subsidiaries ("Cypress") and is protected by and subject to
+ * materials ("Software") is owned by Cypress Semiconductor Corporation
+ * or one of its affiliates ("Cypress") and is protected by and subject to
  * worldwide patent protection (United States and foreign),
  * United States copyright laws and international treaty provisions.
  * Therefore, you may use this Software only as provided in the license
@@ -13,7 +13,7 @@
  * If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
  * non-transferable license to copy, modify, and compile the Software
  * source code solely for use in connection with Cypress's
- * integrated circuit products. Any reproduction, modification, translation,
+ * integrated circuit products.  Any reproduction, modification, translation,
  * compilation, or representation of this Software except as specified
  * above is prohibited without the express written permission of Cypress.
  *
@@ -162,16 +162,20 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
     /* Check for a secured connection. */
     if( ssl_credentials != NULL )
     {
-        result = cy_tls_load_global_root_ca_certificates( ssl_credentials->root_ca, ssl_credentials->root_ca_size - 1 );
-        if( result != CY_RSLT_SUCCESS )
+        if( (ssl_credentials->root_ca != NULL) && (ssl_credentials->root_ca_size > 0) )
         {
-            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "\ncy_tls_load_global_root_ca_certificates failed with Error : [0x%X] ", (unsigned int)result );
-            goto exit;
+            result = cy_tls_load_global_root_ca_certificates( ssl_credentials->root_ca, ssl_credentials->root_ca_size - 1 );
+            if( result != CY_RSLT_SUCCESS )
+            {
+                cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "\ncy_tls_load_global_root_ca_certificates failed with Error : [0x%X] ", (unsigned int)result );
+                goto exit;
+            }
+            network_context->is_rootca_loaded = true;
+            authmode = CY_SOCKET_TLS_VERIFY_REQUIRED;
         }
-        network_context->is_rootca_loaded = true;
 
-        if( (ssl_credentials->client_cert != NULL) && (ssl_credentials->client_cert_size != 0) &&
-            (ssl_credentials->private_key != NULL) && (ssl_credentials->private_key_size != 0) )
+        if( (ssl_credentials->client_cert != NULL) && (ssl_credentials->client_cert_size > 0) &&
+            (ssl_credentials->private_key != NULL) && (ssl_credentials->private_key_size > 0) )
         {
             result = cy_tls_create_identity( ssl_credentials->client_cert, ssl_credentials->client_cert_size - 1,
                                              ssl_credentials->private_key, ssl_credentials->private_key_size - 1,
@@ -207,11 +211,6 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
                 cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_setsockopt failed with Error : [0x%X] ", (unsigned int)result );
                 goto exit;
             }
-        }
-
-        if( ssl_credentials->root_ca != NULL )
-        {
-            authmode = CY_SOCKET_TLS_VERIFY_REQUIRED;
         }
 
         result = cy_socket_setsockopt( network_context->handle, CY_SOCKET_SOL_TLS,
