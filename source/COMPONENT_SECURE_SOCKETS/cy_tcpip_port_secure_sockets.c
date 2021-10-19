@@ -32,7 +32,7 @@
  */
 
 /** @file
- *  Implements TCP server APIs using secure sockets library for AnyCloud framework.
+ *  Implements TCP server APIs using secure sockets library.
  *
  */
 #include <string.h>
@@ -121,13 +121,16 @@ cy_rslt_t cy_awsport_network_deinit( void )
 cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
                                      const cy_awsport_server_info_t *server_info,
                                      const cy_awsport_ssl_credentials_t *ssl_credentials,
-                                     cy_awsport_callback_t *discon_cb )
+                                     cy_awsport_callback_t *discon_cb,
+                                     cy_awsport_callback_t *receive_cb )
 {
     cy_rslt_t result = CY_RSLT_SUCCESS;
-    cy_socket_opt_callback_t socket_callback;
 
     /* Flags to track initialization. */
     cy_socket_tls_auth_mode_t authmode = CY_SOCKET_TLS_VERIFY_NONE;
+#ifdef CY_SECURE_SOCKETS_PKCS_SUPPORT
+    uint8_t cert_location = 0;
+#endif
     cy_socket_ip_address_t ip_addr;
     char *ptr;
 
@@ -171,9 +174,36 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
                 goto exit;
             }
             network_context->is_rootca_loaded = true;
-            authmode = CY_SOCKET_TLS_VERIFY_REQUIRED;
+            if( ssl_credentials->root_ca_verify_mode == CY_AWS_ROOTCA_VERIFY_REQUIRED )
+            {
+                authmode = CY_SOCKET_TLS_VERIFY_REQUIRED;
+            }
+            else if( ssl_credentials->root_ca_verify_mode == CY_AWS_ROOTCA_VERIFY_NONE )
+            {
+                authmode = CY_SOCKET_TLS_VERIFY_NONE;
+            }
+            else
+            {
+                authmode = CY_SOCKET_TLS_VERIFY_OPTIONAL;
+            }
         }
-
+#ifdef CY_SECURE_SOCKETS_PKCS_SUPPORT
+        else
+        {
+            if( ssl_credentials->root_ca_verify_mode == CY_AWS_ROOTCA_VERIFY_REQUIRED )
+            {
+                authmode = CY_SOCKET_TLS_VERIFY_REQUIRED;
+            }
+            else if( ssl_credentials->root_ca_verify_mode == CY_AWS_ROOTCA_VERIFY_NONE )
+            {
+                authmode = CY_SOCKET_TLS_VERIFY_NONE;
+            }
+            else
+            {
+                authmode = CY_SOCKET_TLS_VERIFY_OPTIONAL;
+            }
+        }
+#endif
         if( (ssl_credentials->client_cert != NULL) && (ssl_credentials->client_cert_size > 0) &&
             (ssl_credentials->private_key != NULL) && (ssl_credentials->private_key_size > 0) )
         {
@@ -197,6 +227,30 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
 
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "\ncy_socket_create Success\n" );
 
+#ifdef CY_SECURE_SOCKETS_PKCS_SUPPORT
+        cert_location = CY_SOCKET_DEVICE_CERT_KEY_SECURE_STORAGE;
+        if( network_context->is_rootca_loaded == true )
+        {
+            cert_location = CY_SOCKET_DEVICE_CERT_KEY_RAM;
+        }
+        else
+        {
+            if( ssl_credentials->root_ca_location == CY_AWS_CERT_KEY_LOCATION_RAM )
+            {
+                cert_location = CY_SOCKET_DEVICE_CERT_KEY_RAM;
+            }
+        }
+
+        result = cy_socket_setsockopt( network_context->handle, CY_SOCKET_SOL_TLS,
+                                       CY_SOCKET_SO_ROOTCA_CERTIFICATE_LOCATION, (const void *)&cert_location,
+                                       (uint32_t) sizeof( cert_location ) );
+        if( result != CY_RSLT_SUCCESS )
+        {
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_setsockopt failed with Error : [0x%X] ", (unsigned int)result );
+            goto exit;
+        }
+#endif
+
         if( network_context->tls_identity != NULL )
         {
             /* FALSE-POSITIVE:
@@ -212,6 +266,30 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
                 goto exit;
             }
         }
+
+#ifdef CY_SECURE_SOCKETS_PKCS_SUPPORT
+        cert_location = CY_SOCKET_DEVICE_CERT_KEY_SECURE_STORAGE;
+        if( network_context->tls_identity != NULL )
+        {
+            cert_location = CY_SOCKET_DEVICE_CERT_KEY_RAM;
+        }
+        else
+        {
+            if( ssl_credentials->cert_key_location == CY_AWS_CERT_KEY_LOCATION_RAM )
+            {
+                cert_location = CY_SOCKET_DEVICE_CERT_KEY_RAM;
+            }
+        }
+
+        result = cy_socket_setsockopt( network_context->handle, CY_SOCKET_SOL_TLS,
+                                       CY_SOCKET_SO_DEVICE_CERT_KEY_LOCATION, (const void *)&cert_location,
+                                       (uint32_t) sizeof( cert_location ) );
+        if( result != CY_RSLT_SUCCESS )
+        {
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_setsockopt failed with Error : [0x%X] ", (unsigned int)result );
+            goto exit;
+        }
+#endif
 
         result = cy_socket_setsockopt( network_context->handle, CY_SOCKET_SOL_TLS,
                                        CY_SOCKET_SO_TLS_AUTH_MODE, (const void *) &authmode,
@@ -251,27 +329,20 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
     network_context->address.ip_address.version = CY_SOCKET_IP_VER_V4;
     network_context->address.port = server_info->port;
 
-    /* Set the disconnect notification for socket connection. */
-    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\nSet socket disconnect notification for socket handle = %p\n",
-                   network_context->handle );
-
+    /* Store the disconnect information for socket connection. */
     if ( discon_cb != NULL )
     {
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\nStore the disconnect information for socket handle = %p\n", network_context->handle );
         network_context->disconnect_info.cbf = discon_cb->cbf;
         network_context->disconnect_info.user_data = discon_cb->user_data;
+    }
 
-        socket_callback.callback = awsport_callback;
-        socket_callback.arg = (void *)&network_context->disconnect_info;
-
-        result = cy_socket_setsockopt( network_context->handle, CY_SOCKET_SOL_SOCKET,
-                                       CY_SOCKET_SO_DISCONNECT_CALLBACK,
-                                       &socket_callback, sizeof(socket_callback) );
-        if( result != CY_RSLT_SUCCESS )
-        {
-            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSet socket disconnect notification for socket handle = %p failed with Error : [0x%X]",
-                           network_context->handle, ( unsigned int )result );
-            goto exit;
-        }
+    /* Store the data receive callback information for socket connection. */
+    if ( receive_cb != NULL )
+    {
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\nStore the data receive callback information for socket handle = %p\n", network_context->handle );
+        network_context->receive_info.cbf = receive_cb->cbf;
+        network_context->receive_info.user_data = receive_cb->user_data;
     }
 
 exit:
@@ -310,6 +381,7 @@ cy_rslt_t cy_awsport_network_connect( NetworkContext_t *network_context,
                                       uint32_t recv_timeout_ms )
 {
     cy_rslt_t result = CY_RSLT_SUCCESS;
+    cy_socket_opt_callback_t socket_callback;
 
     if( network_context == NULL )
     {
@@ -350,6 +422,44 @@ cy_rslt_t cy_awsport_network_connect( NetworkContext_t *network_context,
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSet send timeout for socket handle = %p failed with Error : [0x%X]",
                        network_context->handle, ( unsigned int )result );
         return result;
+    }
+
+    if( network_context->disconnect_info.cbf != NULL )
+    {
+        /* Set the disconnect notification for socket connection. */
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\nSet socket disconnect notification for socket handle = %p\n",
+                       network_context->handle );
+
+        socket_callback.callback = awsport_callback;
+        socket_callback.arg = (void *)&network_context->disconnect_info;
+
+        result = cy_socket_setsockopt( network_context->handle, CY_SOCKET_SOL_SOCKET,
+                                       CY_SOCKET_SO_DISCONNECT_CALLBACK,
+                                       &socket_callback, sizeof(socket_callback) );
+        if( result != CY_RSLT_SUCCESS )
+        {
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSet socket disconnect notification for socket handle = %p failed with Error : [0x%X]",
+                           network_context->handle, ( unsigned int )result );
+            return result;
+        }
+    }
+
+    if( network_context->receive_info.cbf != NULL )
+    {
+        /* Set Socket data receive callback */
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\nSet socket data receive notification for socket handle = %p\n", network_context->handle );
+
+        socket_callback.callback = awsport_callback;
+        socket_callback.arg = (void *)&network_context->receive_info;
+
+        result = cy_socket_setsockopt( network_context->handle, CY_SOCKET_SOL_SOCKET,
+                                       CY_SOCKET_SO_RECEIVE_CALLBACK,
+                                       &socket_callback, sizeof(socket_callback) );
+        if( result != CY_RSLT_SUCCESS )
+        {
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSet socket data receive notification for socket handle = %p failed with Error : [0x%X]", network_context->handle, ( unsigned int )result );
+            return result;
+        }
     }
 
     return result;

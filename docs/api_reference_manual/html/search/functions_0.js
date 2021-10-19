@@ -1,7 +1,7 @@
 var searchData=
 [
   ['cy_5fawsport_5fnetwork_5fconnect',['cy_awsport_network_connect',['../group__group__aws__iot__device__sdk__port__functions.html#ga140afbe13317686a1cd4b41c685ecb30',1,'cy_tcpip_port_secure_sockets.h']]],
-  ['cy_5fawsport_5fnetwork_5fcreate',['cy_awsport_network_create',['../group__group__aws__iot__device__sdk__port__functions.html#ga58b113653271218c2d8bf4b666e45678',1,'cy_tcpip_port_secure_sockets.h']]],
+  ['cy_5fawsport_5fnetwork_5fcreate',['cy_awsport_network_create',['../group__group__aws__iot__device__sdk__port__functions.html#ga1fb7cd28818e14cd24d6efab22251634',1,'cy_tcpip_port_secure_sockets.h']]],
   ['cy_5fawsport_5fnetwork_5fdeinit',['cy_awsport_network_deinit',['../group__group__aws__iot__device__sdk__port__functions.html#ga809539ff229e4e6c73b404b200c90b4e',1,'cy_tcpip_port_secure_sockets.h']]],
   ['cy_5fawsport_5fnetwork_5fdelete',['cy_awsport_network_delete',['../group__group__aws__iot__device__sdk__port__functions.html#ga6f30ec6e1015ade2668dd17b4c3f669c',1,'cy_tcpip_port_secure_sockets.h']]],
   ['cy_5fawsport_5fnetwork_5fdisconnect',['cy_awsport_network_disconnect',['../group__group__aws__iot__device__sdk__port__functions.html#ga57db496d184b1416089a9a6e733f5819',1,'cy_tcpip_port_secure_sockets.h']]],

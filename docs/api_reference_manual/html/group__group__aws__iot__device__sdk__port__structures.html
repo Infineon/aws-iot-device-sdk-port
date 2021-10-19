@@ -81,7 +81,8 @@ $(document).ready(function(){initNavTree('group__group__aws__iot__device__sdk__p
 
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Data Structures</a>  </div>
+<a href="#nested-classes">Data Structures</a> &#124;
+<a href="#enum-members">Enumerations</a>  </div>
   <div class="headertitle">
 <div class="title">Structures<div class="ingroups"><a class="el" href="group__group__aws__iot__device__sdk__port.html">AWS IoT Device SDK Port Library API</a></div></div>  </div>
 </div><!--header-->
@@ -91,18 +92,82 @@ $(document).ready(function(){initNavTree('group__group__aws__iot__device__sdk__p
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcy__awsport__callback__t.html">cy_awsport_callback_t</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Contains the disconnect callback information structure.  <a href="structcy__awsport__callback__t.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Contains the awsport event callback information structure.  <a href="structcy__awsport__callback__t.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcy__awsport__server__info__t.html">cy_awsport_server_info_t</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents the server information.  <a href="structcy__awsport__server__info__t.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_network_context.html">NetworkContext</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents the network context for the AWS IoT Device SDK library for AnyCloud reference flow.  <a href="struct_network_context.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Network context structure containing socket information.  <a href="struct_network_context.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcy__awsport__ssl__credentials__t.html">cy_awsport_ssl_credentials_t</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Contains the credentials to establish a TLS connection.  <a href="structcy__awsport__ssl__credentials__t.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
+Enumerations</h2></td></tr>
+<tr class="memitem:ga3b219d8bee66f075b7a878138517172c"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__group__aws__iot__device__sdk__port__structures.html#ga3b219d8bee66f075b7a878138517172c">cy_awsport_rootca_verify_mode_t</a> { <br />
+&#160;&#160;<a class="el" href="group__group__aws__iot__device__sdk__port__structures.html#gga3b219d8bee66f075b7a878138517172ca093bb9e7cdae3f9fda6979db496bb53e">CY_AWS_ROOTCA_VERIFY_REQUIRED</a> = 0, 
+<br />
+&#160;&#160;<a class="el" href="group__group__aws__iot__device__sdk__port__structures.html#gga3b219d8bee66f075b7a878138517172ca2a9b7f51e0ae769eafeb738cd860f835">CY_AWS_ROOTCA_VERIFY_NONE</a> = 1, 
+<br />
+&#160;&#160;<a class="el" href="group__group__aws__iot__device__sdk__port__structures.html#gga3b219d8bee66f075b7a878138517172ca75e34d843d0f110224897fd854c8ebe7">CY_AWS_ROOTCA_VERIFY_OPTIONAL</a> = 2
+<br />
+ }<tr class="memdesc:ga3b219d8bee66f075b7a878138517172c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents the RootCA verification mode for MQTT/HTTP client socket connection.  <a href="group__group__aws__iot__device__sdk__port__structures.html#ga3b219d8bee66f075b7a878138517172c">More...</a><br /></td></tr>
+</td></tr>
+<tr class="separator:ga3b219d8bee66f075b7a878138517172c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga790fd78ad60dea1318420d3d25656032"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__group__aws__iot__device__sdk__port__structures.html#ga790fd78ad60dea1318420d3d25656032">cy_awsport_cert_key_location_t</a> { <a class="el" href="group__group__aws__iot__device__sdk__port__structures.html#gga790fd78ad60dea1318420d3d25656032aa53cc4b67e32516c4302f05719a3f72f">CY_AWS_CERT_KEY_LOCATION_RAM</a> = 0
+ }<tr class="memdesc:ga790fd78ad60dea1318420d3d25656032"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents the memory location for reading certificates and key during TLS connection.  <a href="group__group__aws__iot__device__sdk__port__structures.html#ga790fd78ad60dea1318420d3d25656032">More...</a><br /></td></tr>
+</td></tr>
+<tr class="separator:ga790fd78ad60dea1318420d3d25656032"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Enumeration Type Documentation</h2>
+<a id="ga3b219d8bee66f075b7a878138517172c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga3b219d8bee66f075b7a878138517172c">&#9670;&nbsp;</a></span>cy_awsport_rootca_verify_mode_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="group__group__aws__iot__device__sdk__port__structures.html#ga3b219d8bee66f075b7a878138517172c">cy_awsport_rootca_verify_mode_t</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Represents the RootCA verification mode for MQTT/HTTP client socket connection. </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="gga3b219d8bee66f075b7a878138517172ca093bb9e7cdae3f9fda6979db496bb53e"></a>CY_AWS_ROOTCA_VERIFY_REQUIRED&#160;</td><td class="fielddoc"><p>Peer RootCA verification to be done during TLS handshake. </p>
+<p>Handshake is aborted if verification fails. This mode is a default verify mode for client sockets. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="gga3b219d8bee66f075b7a878138517172ca2a9b7f51e0ae769eafeb738cd860f835"></a>CY_AWS_ROOTCA_VERIFY_NONE&#160;</td><td class="fielddoc"><p>Skip Peer RootCA verification during TLS handshake. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="gga3b219d8bee66f075b7a878138517172ca75e34d843d0f110224897fd854c8ebe7"></a>CY_AWS_ROOTCA_VERIFY_OPTIONAL&#160;</td><td class="fielddoc"><p>Peer RootCA verification to be done during TLS handshake. </p>
+<p>Even if the RootCA verification fails, continue with the TLS handshake. </p>
+</td></tr>
+</table>
+
+</div>
+</div>
+<a id="ga790fd78ad60dea1318420d3d25656032"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga790fd78ad60dea1318420d3d25656032">&#9670;&nbsp;</a></span>cy_awsport_cert_key_location_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="group__group__aws__iot__device__sdk__port__structures.html#ga790fd78ad60dea1318420d3d25656032">cy_awsport_cert_key_location_t</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Represents the memory location for reading certificates and key during TLS connection. </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="gga790fd78ad60dea1318420d3d25656032aa53cc4b67e32516c4302f05719a3f72f"></a>CY_AWS_CERT_KEY_LOCATION_RAM&#160;</td><td class="fielddoc"><p>Read certificates and key from the given buffer (default location for Non PKCS flow). </p>
+</td></tr>
+</table>
+
+</div>
+</div>
 </div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->

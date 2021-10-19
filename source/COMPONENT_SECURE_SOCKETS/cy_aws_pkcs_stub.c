@@ -31,17 +31,32 @@
  * so agrees to indemnify Cypress against all liability.
  */
 
-/** @file
- *  Log header file for aws_iot_sdk_port library.
+/**
+ * @file cy_aws_pkcs_stub.c
+ * Stub implementation for PSA based PKCS#11 API's.
  */
+#ifndef CY_SECURE_SOCKETS_PKCS_SUPPORT
+/* Standard includes. */
+#include <stdio.h>
+#include <stddef.h>
+#include "core_pkcs11.h"
 
-#include "cy_log.h"
+/*-----------------------------------------------------------*/
+/**
+ * With new 'aws-iot-device-sdk-embedded-C' version 202103 (https://github.com/aws/aws-iot-device-sdk-embedded-C/#202103.00), PKCS11 support has been added.
+ * For PKCS flow, PSA based PKCS#11 API's are implemented in Linaro library(https://github.com/Linaro/freertos-pkcs11-psa/#master).
+ * For Non PKCS flow, Linaro library will not be included hence stub implementation for PSA based PKCS#11 API's are required.
+ */
+CK_DEFINE_FUNCTION( CK_RV, C_GetFunctionList )( CK_FUNCTION_LIST_PTR_PTR ppxFunctionList )
+{
+    CK_RV xResult = CKR_OK;
 
-/*****************************************************************/
-#ifdef ENABLE_AWS_PORT_LOGS
-#define cy_ap_log_msg cy_log_msg
-#else
-#define cy_ap_log_msg(a,b,c,...)
+    if( NULL != ppxFunctionList )
+    {
+        *ppxFunctionList = NULL;
+    }
+    return xResult;
+}
+/*-----------------------------------------------------------*/
+
 #endif
-
-/*****************************************************************/

@@ -32,7 +32,7 @@
  */
 
 /** @file
- *  AWS IoT Device SDK port layer API for AnyCloud framework. The APIs defined in this file are used by Cypress MQTT and HTTP Client libraries to integrate Amazon's AWS IoT Device SDK Embedded C libray on Cypress PSoC 6 MCU platforms to provide MQTT and HTTP Client functionalities.
+ *  The APIs defined in this file are used by Cypress MQTT and HTTP Client libraries to integrate Amazon's AWS IoT Device SDK Embedded C libray on Cypress PSoC 6 MCU platforms to provide MQTT and HTTP Client functionalities.
  *
  */
 
@@ -61,13 +61,13 @@
  */
 
 /**
- * Disconnect notification callback function.
+ * awsport event callback function.
  *
  * @param user_data [in]    : User data passed by the caller.
  *
  * @return                  : void
  */
-typedef void ( *cy_awsport_disconnect_callback_t )( void *user_data );
+typedef void ( *cy_awsport_event_callback_t )( void *user_data );
 /** \} group_aws_iot_device_sdk_port_typedefs */
 
 
@@ -77,11 +77,11 @@ typedef void ( *cy_awsport_disconnect_callback_t )( void *user_data );
  */
 
 /**
- * Contains the disconnect callback information structure.
+ * Contains the awsport event callback information structure.
  */
 typedef struct cy_awsport_callback
 {
-    cy_awsport_disconnect_callback_t cbf;        /**< Pointer to the disconnect callback function. */
+    cy_awsport_event_callback_t     cbf;         /**< Pointer to the callback function. */
     void                            *user_data;  /**< User data to be returned when the callback function is invoked. */
 } cy_awsport_callback_t;
 
@@ -95,7 +95,7 @@ typedef struct cy_awsport_server_info
 } cy_awsport_server_info_t;
 
 /**
- * Represents the network context for the AWS IoT Device SDK library for AnyCloud reference flow.
+ * Network context structure containing socket information.
  */
 struct NetworkContext
 {
@@ -103,8 +103,32 @@ struct NetworkContext
     cy_socket_sockaddr_t  address;               /**< Socket Address. */
     void                 *tls_identity;          /**< TLS Socket Identity. */
     cy_awsport_callback_t disconnect_info;       /**< Disconnect callback function and user data. */
+    cy_awsport_callback_t receive_info;          /**< Callback information for data receive */
     bool                  is_rootca_loaded;      /**< Status to track whether Root CA is loaded. */
 };
+
+/**
+ * Represents the RootCA verification mode for MQTT/HTTP client socket connection.
+ */
+typedef enum cy_awsport_rootca_verify_mode
+{
+    CY_AWS_ROOTCA_VERIFY_REQUIRED = 0,           /**< Peer RootCA verification to be done during TLS handshake. Handshake is aborted if verification fails. This mode is a default verify mode for client sockets. */
+    CY_AWS_ROOTCA_VERIFY_NONE = 1,               /**< Skip Peer RootCA verification during TLS handshake. */
+    CY_AWS_ROOTCA_VERIFY_OPTIONAL = 2            /**< Peer RootCA verification to be done during TLS handshake. Even if the RootCA verification fails, continue with the TLS handshake. */
+} cy_awsport_rootca_verify_mode_t;
+
+/**
+ * Represents the memory location for reading certificates and key during TLS connection.
+ */
+typedef enum cy_awsport_cert_key_location
+{
+#ifdef CY_SECURE_SOCKETS_PKCS_SUPPORT
+    CY_AWS_CERT_KEY_LOCATION_SECURE_STORAGE = 0, /**< Read certificates and key from secured element (default location for PKCS flow). */
+    CY_AWS_CERT_KEY_LOCATION_RAM            = 1  /**< Read certificates and key from the given buffer. */
+#else
+    CY_AWS_CERT_KEY_LOCATION_RAM            = 0  /**< Read certificates and key from the given buffer (default location for Non PKCS flow). */
+#endif
+} cy_awsport_cert_key_location_t;
 
 /**
  * Contains the credentials to establish a TLS connection.
@@ -119,18 +143,21 @@ typedef struct cy_awsport_ssl_credentials
      *       Memory allocated for sni_host_name, root_ca, client_cert, private_key, username, and
      *       password should be maintained by the caller until MQTT/HTTP object is deleted.
      */
-    const char *sni_host_name;                   /**< Set a host name to enable SNI. Set to NULL to disable SNI. */
-    size_t      sni_host_name_size;              /**< Size of the SNI host name. */
-    const char *root_ca;                         /**< String representing a trusted server root certificate. */
-    size_t      root_ca_size;                    /**< Size of the Root CA certificate. */
-    const char *client_cert;                     /**< String representing the client certificate. */
-    size_t      client_cert_size;                /**< Size of the client certificate. */
-    const char *private_key;                     /**< String representing the client certificate's private key. */
-    size_t      private_key_size;                /**< Size of the private Key. */
-    const char *username;                        /**< String representing the username for the HTTP/MQTT client. */
-    size_t      username_size;                   /**< Size of the user name. */
-    const char *password;                        /**< String representing the password for the HTTP/MQTT client. */
-    size_t      password_size;                   /**< Size of the password. */
+    const char                        *sni_host_name;           /**< Set a host name to enable SNI. Set to NULL to disable SNI. */
+    size_t                             sni_host_name_size;      /**< Size of the SNI host name. */
+    const char                        *root_ca;                 /**< String representing a trusted server root certificate. */
+    size_t                             root_ca_size;            /**< Size of the Root CA certificate. */
+    cy_awsport_rootca_verify_mode_t    root_ca_verify_mode;     /**< RootCA verification mode for client sockets. */
+    cy_awsport_cert_key_location_t     root_ca_location;        /**< RootCA location for TLS connection. */
+    const char                        *client_cert;             /**< String representing the client certificate. */
+    size_t                             client_cert_size;        /**< Size of the client certificate. */
+    const char                        *private_key;             /**< String representing the client certificate's private key. */
+    size_t                             private_key_size;        /**< Size of the private Key. */
+    cy_awsport_cert_key_location_t     cert_key_location;       /**< Client key and Client certificate location for TLS connection. */
+    const char                        *username;                /**< String representing the username for the HTTP/MQTT client. */
+    size_t                             username_size;           /**< Size of the user name. */
+    const char                        *password;                /**< String representing the password for the HTTP/MQTT client. */
+    size_t                             password_size;           /**< Size of the password. */
 } cy_awsport_ssl_credentials_t;
 /** \} group_aws_iot_device_sdk_port_structures */
 
@@ -161,14 +188,16 @@ cy_rslt_t cy_awsport_network_deinit( void );
  * @param network_context [in]        : Client network context.
  * @param server_info [in]            : Server connection info.
  * @param ssl_credentials [in]        : Credentials for the TLS connection.
- * @param discon_cb [in]              : Application callback function.
+ * @param discon_cb [in]              : Socket disconnect callback function.
+ * @param receive_cb [in]             : Socket data receive callback function.
  *
  * @return cy_rslt_t                  : CY_RSLT_SUCCESS on success; secure sockets library error code otherwise.
  */
 cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
                                      const cy_awsport_server_info_t *server_info,
                                      const cy_awsport_ssl_credentials_t *ssl_credentials,
-                                     cy_awsport_callback_t *discon_cb );
+                                     cy_awsport_callback_t *discon_cb,
+                                     cy_awsport_callback_t *receive_cb );
 
 /**
  * Sets up a TCP connection using the secure sockets API.

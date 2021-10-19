@@ -39,11 +39,104 @@
 /* Standard includes. */
 #include <stdlib.h>
 #include <time.h>
-#include "retry_utils.h"
-#include "clock.h"
+#include "cy_result.h"
+#include "cyhal.h"
+#include "cy_retry_utils.h"
 #include "cy_aws_iot_sdk_port_log.h"
+#include "clock.h"
+
+#ifdef CY_TFM_PSA_SUPPORTED
+#include "psa/crypto.h"
+#endif
 
 /*-----------------------------------------------------------*/
+#ifndef CY_TFM_PSA_SUPPORTED
+static int trng_get_bytes( cyhal_trng_t *obj, uint8_t *output, size_t length, size_t *output_length )
+{
+    uint32_t offset = 0;
+    /* If output is not word-aligned, write partial word */
+    uint32_t prealign = (uint32_t)( (uintptr_t)output % sizeof(uint32_t) );
+    if( prealign != 0 )
+    {
+        uint32_t value = cyhal_trng_generate( obj );
+        uint32_t count = sizeof(uint32_t) - prealign;
+        memmove(&output[0], &value, count);
+        offset += count;
+    }
+    /* Write aligned full words */
+    for( ; offset < length - (sizeof(uint32_t) - 1u); offset += sizeof(uint32_t) )
+    {
+        *(uint32_t *)(&output[offset]) = cyhal_trng_generate( obj );
+    }
+    /* Write partial trailing word if requested */
+    if( offset < length )
+    {
+        uint32_t value = cyhal_trng_generate( obj );
+        uint32_t count = length - offset;
+        memmove( &output[offset], &value, count );
+        offset += count;
+    }
+    *output_length = offset;
+    return 0;
+}
+#endif
+
+int generate_random_number( void *buffer, size_t buffer_length, size_t *output_length )
+{
+#ifdef CY_TFM_PSA_SUPPORTED
+    psa_status_t status = psa_crypto_init();
+    if( status != PSA_SUCCESS )
+    {
+        return -1;
+    }
+
+    status = psa_generate_random( buffer, buffer_length );
+    if( status != PSA_SUCCESS )
+    {
+        return -1;
+    }
+
+    *output_length = buffer_length;
+#else
+    uint8_t *p = buffer;
+    size_t length = 0;
+
+    cyhal_trng_t obj;
+    cy_rslt_t result;
+
+    result = cyhal_trng_init( &obj );
+    if( result != CY_RSLT_SUCCESS )
+    {
+        return -1;
+    }
+
+    (void)trng_get_bytes( &obj, p, buffer_length, (size_t*) &length );
+
+    *output_length = length;
+    cyhal_trng_free( &obj );
+#endif
+    return 0;
+}
+
+uint32_t cy_rand( void )
+{
+    int ret = 0;
+    uint16_t  r[2];
+    size_t    output_length = 0;
+    uint32_t  random_num = 0;
+
+    /* Generate a random number between 1 and 9999999 */
+    while ( random_num == 0 )
+    {
+        ret = generate_random_number( (void *)r,  4, &output_length );
+        if( ret != 0 )
+        {
+            break;
+        }
+        random_num = (uint32_t)(r[0] * r[1]) % 9999999;
+    }
+    return random_num;
+}
 
 RetryUtilsStatus_t RetryUtils_BackoffAndSleep( RetryUtilsParams_t *pRetryParams )
 {
@@ -61,7 +154,7 @@ RetryUtilsStatus_t RetryUtils_BackoffAndSleep( RetryUtilsParams_t *pRetryParams 
         ( 0 == MAX_RETRY_ATTEMPTS ) )
     {
         /* Choose a random value for back-off time between 0 and the max jitter value. */
-        backoff_delay = rand() % pRetryParams->nextJitterMax;
+        backoff_delay = (uint32_t)(cy_rand() % pRetryParams->nextJitterMax);
 
         /*  Wait for the backoff time to expire before the next retry. */
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "Wait for backoff time %ul for the next retry!\n", backoff_delay );
@@ -113,7 +206,7 @@ void RetryUtils_ParamsReset( RetryUtilsParams_t *pRetryParams )
     srand( time_ms );
 
     /* Calculate jitter value using a random number. */
-    jitter = ( rand() % MAX_JITTER_VALUE_SECONDS );
+    jitter = (uint32_t)( cy_rand() % MAX_JITTER_VALUE_SECONDS );
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "Calculated jitter value %lu\n", jitter );
 
     /* Reset the backoff value to the initial timeout value plus jitter. */
