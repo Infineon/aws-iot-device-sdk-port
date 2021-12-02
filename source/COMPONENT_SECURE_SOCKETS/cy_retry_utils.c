@@ -49,8 +49,13 @@
 #include "psa/crypto.h"
 #endif
 
+#ifdef COMPONENT_43907
+extern cy_rslt_t cy_prng_get_random( void* buffer, uint32_t buffer_length );
+#endif
+
 /*-----------------------------------------------------------*/
 #ifndef CY_TFM_PSA_SUPPORTED
+#ifndef COMPONENT_43907
 static int trng_get_bytes( cyhal_trng_t *obj, uint8_t *output, size_t length, size_t *output_length )
 {
     uint32_t offset = 0;
@@ -80,7 +85,7 @@ static int trng_get_bytes( cyhal_trng_t *obj, uint8_t *output, size_t length, si
     return 0;
 }
 #endif
-
+#endif
 int generate_random_number( void *buffer, size_t buffer_length, size_t *output_length )
 {
 #ifdef CY_TFM_PSA_SUPPORTED
@@ -96,6 +101,16 @@ int generate_random_number( void *buffer, size_t buffer_length, size_t *output_l
         return -1;
     }
 
+    *output_length = buffer_length;
+#elif defined(COMPONENT_43907)
+    /* 43907 kits does not have TRNG module. Get the random
+     * number from wifi-mw-core internal PRNG API. */
+    cy_rslt_t result;
+    result = cy_prng_get_random(buffer, buffer_length);
+    if(result != CY_RSLT_SUCCESS)
+    {
+        return -1;
+    }
     *output_length = buffer_length;
 #else
     uint8_t *p = buffer;

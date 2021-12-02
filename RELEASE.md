@@ -9,6 +9,8 @@ See [README.md](./README.md) for details.
 - None.
 
 ## Changelog
+### v2.1.0
+- Added support for CYW954907AEVAL1F and CYW943907AEVAL1F kits.
 
 ### v2.0.0
 
