@@ -51,6 +51,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "cy_aws_iot_port_error.h"
 #include "cy_secure_sockets.h"
 #include "transport_interface.h"
 #include "cy_tls.h"

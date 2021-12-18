@@ -9,6 +9,9 @@ See [README.md](./README.md) for details.
 - None.
 
 ## Changelog
+### v2.2.0
+- Added OS and PAL functional interface routines for AWS OTA.
+
 ### v2.1.0
 - Added support for CYW954907AEVAL1F and CYW943907AEVAL1F kits.
 
