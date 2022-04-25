@@ -9,6 +9,9 @@ See [README.md](./README.md) for details.
 - None.
 
 ## Changelog
+### v2.2.1
+- Renamed OTA and socket port layer c files.
+
 ### v2.2.0
 - Added OS and PAL functional interface routines for AWS OTA.
 

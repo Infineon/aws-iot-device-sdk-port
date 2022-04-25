@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -32,7 +32,7 @@
  */
 
 /**
- * @file cy_retry_utils.c
+ * @file cy_aws_retry_utils.c
  * Utility implementation of backoff logic, used for attempting retries of failed processes.
  */
 

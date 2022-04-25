@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -31,7 +31,7 @@
  * so agrees to indemnify Cypress against all liability.
  */
 
-/** @file
+/** @file cy_aws_tcpip_port_secure_sockets.c
  *  Implements TCP server APIs using secure sockets library.
  *
  */

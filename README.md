@@ -14,13 +14,13 @@ By default, OTA support is disabled. To enable OTA support follow below steps.
 
 2. If using *.lib* files, create a *.lib* files for anycloud-ota and serial-flash as follows and add *.lib* file along with other dependent library *.lib* files:
 
-   *anycloud-ota.lib*: http://git-ore.aus.cypress.com/repo-staging/anycloud-ota#release-v4.1.0 <br>
-   *serial-flash.lib*: https://github.com/cypresssemiconductorco/serial-flash#latest-v1.X
+   *anycloud-ota.lib*: https://github.com/Infineon/anycloud-ota#release-v4.1.0 <br>
+   *serial-flash.lib*: https://github.com/Infineon/serial-flash#latest-v1.X
 
 3. If using *.mtb* files, create a *.mtb* files for anycloud-ota and serial-flash as follows and add *.mtb* file along with other dependent library *.mtb* files:
 
-   *anycloud-ota.mtb*: http://git-ore.aus.cypress.com/repo-staging/anycloud-ota#release-v4.1.0#$$ASSET_REPO$$/anycloud-ota/ <br>
-   *serial-flash.mtb*: https://github.com/cypresssemiconductorco/serial-flash#latest-v1.X#$$ASSET_REPO$$/serial-flash/
+   *anycloud-ota.mtb*: https://github.com/Infineon/anycloud-ota#release-v4.1.0#$$ASSET_REPO$$/anycloud-ota/ <br>
+   *serial-flash.mtb*: https://github.com/Infineon/serial-flash#latest-v1.X#$$ASSET_REPO$$/serial-flash/
 
 4. Execute the `make getlibs` command.
 
@@ -40,15 +40,15 @@ By default, OTA support is disabled. To enable OTA support follow below steps.
 
 - [AWS IoT Device SDK Port Library Version](./version.xml)
 
-- [AWS IoT Device SDK Port Library API Documentation](https://cypresssemiconductorco.github.io/aws-iot-device-sdk-port/api_reference_manual/html/index.html)
+- [AWS IoT Device SDK Port Library API Documentation](https://infineon.github.io/aws-iot-device-sdk-port/api_reference_manual/html/index.html)
 
 - [Amazon's AWS-IoT-Device-SDK-Embedded-C Library](https://github.com/aws/aws-iot-device-sdk-embedded-C/tree/202103.00)
 
-- [MQTT Client Library API Documentation](https://cypresssemiconductorco.github.io/mqtt/api_reference_manual/html/index.html)
+- [MQTT Client Library API Documentation](https://infineon.github.io/mqtt/api_reference_manual/html/index.html)
 
-- [HTTP Client Library API Documentation](https://cypresssemiconductorco.github.io/http-client/api_reference_manual/html/index.html)
+- [HTTP Client Library API Documentation](https://infineon.github.io/http-client/api_reference_manual/html/index.html)
 
-- [Connectivity Utilities API documentation - for cy-log details](https://cypresssemiconductorco.github.io/connectivity-utilities/api_reference_manual/html/group__logging__utils.html)
+- [Connectivity Utilities API documentation - for cy-log details](https://infineon.github.io/connectivity-utilities/api_reference_manual/html/group__logging__utils.html)
 
 - [ModusToolbox&trade; Software Environment, Quick Start Guide, Documentation, and Videos](https://www.cypress.com/products/modustoolbox-software-environment)
 

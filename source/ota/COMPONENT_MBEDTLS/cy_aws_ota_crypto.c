@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -32,7 +32,7 @@
  */
 
 /**
- * @file cy_ota_crypto.c
+ * @file cy_aws_ota_crypto.c
  *  Implements cryptographic APIs for AWS OTA.
  */
 

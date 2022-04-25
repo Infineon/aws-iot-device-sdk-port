@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -32,47 +32,25 @@
  */
 
 /**
- * @file cy_clock.c
- * Implementation of timer functions using Cypress abstraction-rtos.
+ * @file cy_aws_ota_utils.c
+ *  Implements OTA utility functions for AWS OTA.
+ *
  */
 
-/* Standard includes. */
 #include <stdio.h>
-#include "clock.h"
-#include "cyabs_rtos.h"
-#include "cy_result.h"
-#include "cy_aws_iot_sdk_port_log.h"
+
+/* Utility API's needs */
+#include "cy_ota_utils.h"
+#include "mbedtls/base64.h"
 
 /*-----------------------------------------------------------*/
-uint32_t Clock_GetTimeMs( void )
-{
-    cy_time_t time_ms = 0;
-    cy_rslt_t result = CY_RSLT_SUCCESS;
 
-    result = cy_rtos_get_time( &time_ms );
-    if( result == CY_RSLT_SUCCESS )
-    {
-        return( (uint32_t) time_ms );
-    }
-    else
-    {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "GetTimeMs failed with Error = [0x%X]\n", ( unsigned int )result );
-        time_ms = 0;
-        return( (uint32_t) time_ms );
-    }
+int cy_ota_base64_encode( unsigned char *dst, size_t dlen, size_t *olen, const unsigned char *src, size_t slen )
+{
+    return mbedtls_base64_encode( dst, dlen, olen, src, slen );
 }
 
-/*-----------------------------------------------------------*/
-
-void Clock_SleepMs( uint32_t sleepTimeMs )
+int cy_ota_base64_decode( unsigned char *dst, size_t dlen, size_t *olen, const unsigned char *src, size_t slen )
 {
-    cy_rslt_t result = CY_RSLT_SUCCESS;
-
-    result = cy_rtos_delay_milliseconds( sleepTimeMs );
-    if( result != CY_RSLT_SUCCESS )
-    {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "SleepMs failed with Error = [0x%X]\n", ( unsigned int )result );
-    }
+    return mbedtls_base64_decode( dst, dlen, olen, src, slen );
 }
-
-/*-----------------------------------------------------------*/
