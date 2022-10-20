@@ -5,12 +5,21 @@
 See [README.md](./README.md) for details.
 
 ## Known Issues
-
-- None.
+| Problem | Workaround |
+| ------- | ---------- |
+| IAR 9.30 toolchain throws build errors on Debug mode, if application explicitly includes iar_dlmalloc.h file | Add '--advance-heap' to LDFLAGS in application Makefile. |
 
 ## Changelog
+
+### v2.2.2
+- Added API to verify certificate using signer certificate.
+- Added Flash erase API and Updated Flash read, seek APIs to handle HOTA updates and certificate updates.
+- Added support for CM0P core.
+- Minor Documentation Updates.
+
 ### v2.2.1
 - Renamed OTA and socket port layer c files.
+- Moved ota_config.h to *configs* folder.
 
 ### v2.2.0
 - Added OS and PAL functional interface routines for AWS OTA.
@@ -39,10 +48,10 @@ This version of the library was validated for compatibility with the following s
 
 | Software and Tools                                        | Version |
 | :---                                                      | :----:  |
-| ModusToolbox&trade; Software Environment                  | 2.4     |
-| - ModusToolbox&trade; Device Configurator                 | 3.10    |
-| - ModusToolbox&trade; CapSense Configurator / Tuner tools | 4.0     |
-| PSoC 6 Peripheral Driver Library (PDL)                    | 2.3.0   |
+| ModusToolbox&trade; Software Environment                  | 3.0     |
+| - ModusToolbox&trade; Device Configurator                 | 4.0     |
+| - ModusToolbox&trade; CapSense Configurator / Tuner tools | 5.0     |
+| PSoC 6 Peripheral Driver Library (PDL)                    | 3.0.0   |
 | GCC Compiler                                              | 10.3.1  |
-| IAR Compiler                                              | 8.32    |
-| Arm Compiler 6                                            | 6.14    |
+| IAR Compiler                                              | 9.30   |
+| Arm Compiler 6                                            | 6.16    |

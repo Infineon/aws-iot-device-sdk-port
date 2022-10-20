@@ -244,3 +244,55 @@ cy_rslt_t cy_crypto_sign_verification_final( void * pvContext,
 }
 
 /*-----------------------------------------------------------*/
+/**
+ * @brief Validate Certificate using the signer certificate
+ */
+cy_rslt_t cy_crypto_validate_cert( char *pCertificate,
+                                   size_t xCertificateLength,
+                                   char * pSignerCertificate,
+                                   size_t xSignerCertificateLength )
+{
+    mbedtls_x509_crt    cacert;
+    mbedtls_x509_crt    cert;
+    cy_rslt_t           result  = CY_RSLT_AWS_IOT_PORT_ERROR_GENERAL;
+    int                 ret     = 0;
+    uint32_t            flags   = 0;
+
+    if( ( pCertificate == NULL ) || ( pSignerCertificate == NULL ) )
+    {
+        return ( CY_RSLT_AWS_IOT_PORT_ERROR_BADARG );
+    }
+
+    mbedtls_x509_crt_init( &cacert );
+    mbedtls_x509_crt_init( &cert );
+
+    ret = mbedtls_x509_crt_parse( &cert, (const unsigned char *) pCertificate,
+                                  xCertificateLength );
+    if( ret != 0 )
+    {
+        goto cleanup;
+    }
+
+    ret = mbedtls_x509_crt_parse( &cacert, (const unsigned char *) pSignerCertificate,
+                                  xSignerCertificateLength );
+    if( ret != 0 )
+    {
+        goto cleanup;
+    }
+
+    ret = mbedtls_x509_crt_verify( &cert, &cacert, NULL, NULL, &flags, NULL, NULL );
+    if( ret != 0 )
+    {
+        result = CY_RSLT_AWS_IOT_PORT_ERROR_CRYPTO_VERIFY_SIGN_FAIL;
+        goto cleanup;
+    }
+    result = CY_RSLT_SUCCESS;
+
+cleanup:
+    mbedtls_x509_crt_free( &cacert );
+    mbedtls_x509_crt_free( &cert );
+    return ( result );
+}
+
+
+/*-----------------------------------------------------------*/

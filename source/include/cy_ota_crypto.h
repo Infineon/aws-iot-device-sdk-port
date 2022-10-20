@@ -112,4 +112,19 @@ cy_rslt_t cy_crypto_sign_verification_final( void * pvContext,
                                              uint8_t * pucSignature,
                                              size_t xSignatureLength );
 
+/**
+ * Validates the certificate using the signer certificate.
+ *
+ * @param[in] pCertificate       Certificate to validate
+ * @param[in] xCertificateLength Length in bytes of the certificate
+ * @param[in] pSignerCertificate Signer certificate
+ * @param[in] pSignerCertificate Length in bytes of the signer certificate
+ *
+ * @return CY_RSLT_SUCCESS if certificate verification succeeds, or failure code otherwise.
+ */
+cy_rslt_t cy_crypto_validate_cert( char *pCertificate,
+                                   size_t xCertificateLength,
+                                   char * pSignerCertificate,
+                                   size_t xSignerCertificateLength );
+
 #endif /* ifndef CY_OTA_CRYPTO_H_ */

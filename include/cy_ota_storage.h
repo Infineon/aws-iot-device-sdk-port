@@ -47,8 +47,12 @@
 
 typedef enum cy_ota_type
 {
-    CY_AWS_IOT_OTA_TYPE_DEVICE_OTA = 0,
-    CY_AWS_IOT_OTA_TYPE_HOST_OTA
+    CY_AWS_IOT_OTA_TYPE_INVALID = 0,
+    CY_AWS_IOT_OTA_TYPE_DEVICE_OTA = 101,
+    CY_AWS_IOT_OTA_TYPE_OTA_CERT = 103,
+    CY_AWS_IOT_OTA_TYPE_ROOT_CERT = 107,
+    CY_AWS_IOT_OTA_TYPE_HOST_OTA = 202,
+    CY_AWS_IOT_OTA_TYPE_HOTA_CERT = 204
 } cy_ota_type_t;
 
 /**
@@ -260,15 +264,24 @@ cy_rslt_t cy_awsport_ota_flash_seek( uint32_t offset );
  *
  * Start address of flash is calculated based on OTA type.
  *
- * @param ota_type [in]             : Specify OTA type(Host OTA or Device OTA).
  * @param bytes_to_read [in]        : Number of bytes to read from OTA file.
  * @param read_buf [in]             : OTA read buffer.
  * @param read_buf_size [in]        : Size of OTA read buffer.
+ * @param bytes_received [out]      : Number of bytes read from flash.
  *
  * @return cy_rslt_t                : CY_RSLT_SUCCESS on success; error codes otherwise.
  */
-cy_rslt_t cy_awsport_ota_flash_read( cy_ota_type_t ota_type, uint32_t bytes_to_read,
-                                     uint8_t * const read_buf, uint32_t read_buf_size );
+cy_rslt_t cy_awsport_ota_flash_read( uint32_t bytes_to_read, uint8_t * const read_buf,
+                                     uint32_t read_buf_size, uint32_t *bytes_received );
+
+/**
+ * Erase OTA flash area.
+ *
+ * @param flash_id [in]             : Flash storage ID.
+ *
+ * @return cy_rslt_t                : CY_RSLT_SUCCESS on success; error codes otherwise.
+ */
+cy_rslt_t cy_awsport_ota_flash_erase( uint8_t flash_id );
 
 /**
  * Gets the Flash handle required for AWS OTA.
@@ -277,5 +290,26 @@ cy_rslt_t cy_awsport_ota_flash_read( cy_ota_type_t ota_type, uint32_t bytes_to_r
  *
  */
 void * cy_awsport_ota_flash_get_handle( void );
+
+/**
+ * Gets Signer certificate for the ota_type
+ *
+ * @param ota_type [in]             : Specify OTA type.
+ * @param pucCertName [in]          : Certificate name.
+ * @param ota_signer_cert_size [out]: Size of the signer certificate.
+ *
+ * @return uint8_t *                : Signer certificate on success; NULL otherwise.
+ *
+ */
+uint8_t * cy_awsport_get_ota_signer_certificate( cy_ota_type_t ota_type,
+                                                 const uint8_t * const pucCertName,
+                                                 uint32_t * const ota_signer_cert_size);
+
+/**
+ * Remove boot magic code from image in external flash.
+ *
+ * @return cy_rslt_t                : CY_RSLT_SUCCESS on success; error codes otherwise.
+ */
+cy_rslt_t cy_awsport_ota_remove_boot_magic(void);
 
 #endif /* ifndef CY_OTA_STORAGE_H_ */

@@ -62,6 +62,7 @@ $(SEARCH_aws-iot-device-sdk-embedded-C)/libraries/standard/coreHTTP/source/depen
 $(SEARCH_aws-iot-device-sdk-embedded-C)/libraries/standard/coreHTTP/source/dependency/3rdparty/http_parser/bench.c
 $(SEARCH_aws-iot-device-sdk-embedded-C)/libraries/standard/coreHTTP/source/dependency/3rdparty/http_parser/test.c
 $(SEARCH_aws-iot-device-sdk-embedded-C)/libraries/standard/coreHTTP/source/dependency/3rdparty/http_parser/fuzzers
+
 ../aws-iot-device-sdk-embedded-C/libraries/standard/coreHTTP/test
 ../aws-iot-device-sdk-embedded-C/libraries/standard/coreHTTP/tools
 ../aws-iot-device-sdk-embedded-C/libraries/standard/coreHTTP/docs
@@ -73,6 +74,7 @@ $(SEARCH_aws-iot-device-sdk-embedded-C)/libraries/standard/coreHTTP/source/depen
 $(SEARCH_aws-iot-device-sdk-embedded-C)/libraries/standard/coreMQTT/test
 $(SEARCH_aws-iot-device-sdk-embedded-C)/libraries/standard/coreMQTT/docs
 $(SEARCH_aws-iot-device-sdk-embedded-C)/libraries/standard/coreMQTT/tools
+
 ../aws-iot-device-sdk-embedded-C/libraries/standard/coreMQTT/test
 ../aws-iot-device-sdk-embedded-C/libraries/standard/coreMQTT/docs
 ../aws-iot-device-sdk-embedded-C/libraries/standard/coreMQTT/tools
@@ -82,6 +84,7 @@ $(SEARCH_aws-iot-device-sdk-embedded-C)/libraries/standard/corePKCS11/docs
 $(SEARCH_aws-iot-device-sdk-embedded-C)/libraries/standard/corePKCS11/tools
 $(SEARCH_aws-iot-device-sdk-embedded-C)/libraries/standard/corePKCS11/source/portable
 $(SEARCH_aws-iot-device-sdk-embedded-C)/libraries/standard/corePKCS11/source/dependency/3rdparty/mbedtls
+
 ../aws-iot-device-sdk-embedded-C/libraries/standard/corePKCS11/test
 ../aws-iot-device-sdk-embedded-C/libraries/standard/corePKCS11/docs
 ../aws-iot-device-sdk-embedded-C/libraries/standard/corePKCS11/tools

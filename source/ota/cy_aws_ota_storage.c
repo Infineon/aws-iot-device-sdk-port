@@ -59,6 +59,7 @@
 #include "flash_map_backend/flash_map_backend.h"
 #include "sysflash/sysflash.h"
 #include "bootutil/bootutil.h"
+#include "bootutil_priv.h"
 #include "cy_smif_psoc6.h"
 #endif
 
@@ -153,12 +154,6 @@ uint32_t ota_signer_cert_size = 0;
  */
 uint8_t  *ota_signer_cert = NULL;
 
-/*
- * Defines
- */
-static const char ota_pal_cert_begin[] = "-----BEGIN CERTIFICATE-----";
-static const char ota_pal_cert_end[]   = "-----END CERTIFICATE-----";
-
 /**
  * Context structure for parsing the tar file
  */
@@ -168,7 +163,7 @@ cy_untar_context_t  cy_ota_untar_context;
 /*-----------------------------------------------------------*/
 FILE *open_memstream(char **bufptr, size_t *lenptr)
 {
-	return ((FILE *)NULL);
+    return ((FILE *)NULL);
 }
 
 /*-----------------------------------------------------------*/
@@ -341,41 +336,39 @@ cy_rslt_t ota_untar_init_context( cy_untar_context_t *ctxt, OtaFileContext_t * c
  */
 static uint8_t * ota_pal_read_assume_certificate( const uint8_t * const pucCertName, uint32_t * const ota_signer_cert_size )
 {
-    uint8_t *pucCertEnd;
-    uint8_t *pucDecodedCertificate;
-    size_t ulDecodedCertificateSize;
-
-    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "%s() start ....\n\r", __func__ );
-    *ota_signer_cert_size = sizeof(signingcredentialSIGNING_CERTIFICATE_PEM);
-    /* Skip the "BEGIN CERTIFICATE" */
-    uint8_t* pucCertBegin = (uint8_t *)strstr( signingcredentialSIGNING_CERTIFICATE_PEM, ota_pal_cert_begin );
-    if (pucCertBegin == NULL)
-    {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "No Begin found for Certificate.\n\r" );
-        return NULL;
-    }
-    pucCertBegin += sizeof( ota_pal_cert_begin );
-
-    /* Find the "END CERTIFICATE" */
-    pucCertEnd =  (uint8_t *)strstr( (char *)pucCertBegin, ota_pal_cert_end );
-    if (pucCertEnd == NULL)
-    {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "No END found for Certificate.\n\r" );
-        return NULL;
-    }
-
-    cy_ota_base64_decode( NULL, 0, &ulDecodedCertificateSize, pucCertBegin, pucCertEnd - pucCertBegin );
-    pucDecodedCertificate = (uint8_t *) malloc( ulDecodedCertificateSize );
-    if( pucDecodedCertificate == NULL )
-    {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Failed to decode the Certificate.\n\r" );
-        return NULL;
-    }
-    cy_ota_base64_decode( pucDecodedCertificate, ulDecodedCertificateSize, &ulDecodedCertificateSize, pucCertBegin, pucCertEnd - pucCertBegin );
-
-    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "%s() end ....\n\r", __func__ );
-    return pucDecodedCertificate;
+    return ( cy_awsport_get_ota_signer_certificate( cy_aws_ota_ctx.ota_type, pucCertName, ota_signer_cert_size ) );
 }
+
+/*-----------------------------------------------------------*/
+/*
+ * Checks whether signature check can be skipped for the current OTA in progress
+ *
+ * Returns true if signature check to be skipped, false otherwise
+ */
+static bool ota_pal_skip_sign_check( OtaFileContext_t * const C )
+{
+    bool skip_sign_check = false;
+
+    if( C != NULL )
+    {
+        switch( C->fileType )
+        {
+            case CY_AWS_IOT_OTA_TYPE_HOTA_CERT:
+            case CY_AWS_IOT_OTA_TYPE_HOST_OTA:
+                /* Skip validation if the signer certificate is NULL */
+                if( ota_signer_cert == NULL )
+                {
+                   skip_sign_check = true;
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+    return ( skip_sign_check );
+}
+
 
 /*-----------------------------------------------------------*/
 /**
@@ -424,8 +417,11 @@ static OtaPalStatus_t ota_pal_file_sign_check_init( OtaFileContext_t * const C )
     ota_signer_cert = ota_pal_read_assume_certificate( ( const uint8_t * const ) C->pCertFilepath, &ota_signer_cert_size );
     if( ota_signer_cert == NULL )
     {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "ota_pal_read_assume_certificate() failed.\n\r" );
-        return OtaPalBadSignerCert;
+        if ( ota_pal_skip_sign_check( C ) != true )
+        {
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "ota_pal_read_assume_certificate() failed.\n\r" );
+            return OtaPalBadSignerCert;
+        }
     }
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "%s() end ....\n\r", __func__ );
     return OtaPalSuccess;
@@ -435,16 +431,23 @@ static OtaPalStatus_t ota_pal_file_sign_check_init( OtaFileContext_t * const C )
 /**
  * Do the final Signature Check for tarball OTA.
  * This function is used for a tarball OTA file.
- * This function is called from cy_awsport_ota_pal_close_receive_file().
+ * This function is called from cy_awsport_ota_flash_close_receive_file().
  */
 static OtaPalStatus_t ota_pal_file_sign_check_final( OtaFileContext_t * const C )
 {
     OtaPalStatus_t   result = OtaPalSuccess;
 
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "%s() start ....\n\r", __func__ );
-    if ( (C == NULL) || (C != cy_aws_ota_ctx.ota_fs_ctx) || (ota_sig_verify_context == NULL) || (ota_signer_cert == NULL) || (ota_signer_cert_size == 0) )
+    if ( (C == NULL) || (C != cy_aws_ota_ctx.ota_fs_ctx) || (ota_sig_verify_context == NULL) )
     {
         /* Free the signer certificate that we now own after prvReadAndAssumeCertificate(). */
+        ota_pal_file_sign_check_deinit();
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "ota_pal_file_sign_check_final failed\n\r" );
+        return OtaPalBadSignerCert;
+    }
+
+    if( ( ota_pal_skip_sign_check( C ) != true ) && ( ( ota_signer_cert == NULL ) || ( ota_signer_cert_size == 0 ) ) )
+    {
         ota_pal_file_sign_check_deinit();
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "ota_pal_file_sign_check_final failed\n\r" );
         return OtaPalBadSignerCert;
@@ -453,8 +456,11 @@ static OtaPalStatus_t ota_pal_file_sign_check_final( OtaFileContext_t * const C 
     if( cy_crypto_sign_verification_final( ota_sig_verify_context, ( char * ) ota_signer_cert, ota_signer_cert_size,
                                            C->pSignature->data, C->pSignature->size ) != CY_RSLT_SUCCESS )
     {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "cy_crypto_sign_verification_final() failed.\n\r" );
-        result = OtaPalSignatureCheckFailed;
+        if( ota_pal_skip_sign_check( C ) != true )
+        {
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "cy_crypto_sign_verification_final() failed.\n\r" );
+            result = OtaPalSignatureCheckFailed;
+        }
     }
     ota_last_sig_check = result;
 
@@ -484,7 +490,10 @@ static OtaPalStatus_t ota_pal_file_sign_check_step( OtaFileContext_t * const C, 
         }
         return OtaPalSignatureCheckFailed;
     }
-    cy_crypto_sign_verification_update( ota_sig_verify_context, buffer, size );
+    if( ota_pal_skip_sign_check( C ) != true )
+    {
+        cy_crypto_sign_verification_update( ota_sig_verify_context, buffer, size );
+    }
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "%s() end ....\n\r", __func__ );
     return OtaPalSuccess;
 }
@@ -549,7 +558,6 @@ cy_rslt_t cy_awsport_ota_flash_init( void )
 
     ota_mutex_init_status = true;
 
-
 #ifdef CY_BOOT_USE_EXTERNAL_FLASH
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "psoc6_qspi_init started...\n\r" );
     cy_result = psoc6_qspi_init();
@@ -598,20 +606,22 @@ OtaPalStatus_t cy_awsport_ota_flash_abort( OtaFileContext_t * const C )
     if( cy_result != CY_RSLT_SUCCESS )
     {
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Acquiring OTA Mutex %p failed with Error : [0x%X] \n\r", cy_aws_ota_ctx.ota_sync_mutex, (unsigned int)result );
-        return OtaPalAbortFailed;
+        return OTA_PAL_COMBINE_ERR( OtaPalAbortFailed, 0 );
     }
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Acquired OTA Mutex %p \n\r", cy_aws_ota_ctx.ota_sync_mutex );
 
     if ( (C == NULL) || (C != cy_aws_ota_ctx.ota_fs_ctx) )
     {
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Invalid file context.\n\r" );
-        return OtaPalNullFileContext;
+        (void)cy_rtos_set_mutex( &(cy_aws_ota_ctx.ota_sync_mutex) );
+        return OTA_PAL_COMBINE_ERR( OtaPalNullFileContext, 0 );
     }
 
     if( C->pFile == NULL )
     {
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Invalid file handle.\n\r" );
-        return OtaPalNullFileContext;
+        (void)cy_rtos_set_mutex( &(cy_aws_ota_ctx.ota_sync_mutex) );
+        return OTA_PAL_COMBINE_ERR( OtaPalNullFileContext, 0 );
     }
 
     fap = (const struct flash_area *)C->pFile;
@@ -623,6 +633,7 @@ OtaPalStatus_t cy_awsport_ota_flash_abort( OtaFileContext_t * const C )
     /* reset our globals */
     C->pFile = NULL;
     cy_aws_ota_ctx.ota_fs_ctx = NULL;
+    cy_aws_ota_ctx.ota_type = CY_AWS_IOT_OTA_TYPE_INVALID;
 
     /* Free the signer certificate that we now own after prvReadAndAssumeCertificate(). */
     ota_pal_file_sign_check_deinit();
@@ -632,7 +643,7 @@ OtaPalStatus_t cy_awsport_ota_flash_abort( OtaFileContext_t * const C )
     if( cy_result != CY_RSLT_SUCCESS )
     {
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Failed to release OTA Mutex %p failed with Error : [0x%X] \n\r", cy_aws_ota_ctx.ota_sync_mutex, (unsigned int)cy_result );
-        return OtaPalAbortFailed;
+        return OTA_PAL_COMBINE_ERR( OtaPalAbortFailed, 0 );
     }
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\nReleased OTA Mutex %p ", cy_aws_ota_ctx.ota_sync_mutex );
 
@@ -642,7 +653,7 @@ OtaPalStatus_t cy_awsport_ota_flash_abort( OtaFileContext_t * const C )
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Flash support is not added\n" );
 #endif
 
-    return result;
+    return OTA_PAL_COMBINE_ERR( result, 0 );
 }
 
 /*-----------------------------------------------------------*/
@@ -658,7 +669,7 @@ OtaPalStatus_t cy_awsport_ota_flash_create_receive_file( OtaFileContext_t * cons
     if( C == NULL )
     {
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Invalid file context.\n\r" );
-        return OtaPalNullFileContext;
+        return OTA_PAL_COMBINE_ERR( OtaPalNullFileContext, 0 );
     }
 
     if( C->pFilePath == NULL )
@@ -677,7 +688,7 @@ OtaPalStatus_t cy_awsport_ota_flash_create_receive_file( OtaFileContext_t * cons
     if( flash_area_open( FLASH_AREA_IMAGE_SECONDARY(0), &fap ) != 0 )
     {
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "OTA receive file creation failed...\n\r " );
-        return OtaPalRxFileCreateFailed;
+        return OTA_PAL_COMBINE_ERR( OtaPalRxFileCreateFailed, 0 );
     }
 
     /* NOTE: FileHandle MUST be non-NULL of the OTA Agent will error out */
@@ -694,12 +705,13 @@ OtaPalStatus_t cy_awsport_ota_flash_create_receive_file( OtaFileContext_t * cons
     if( cy_result != CY_RSLT_SUCCESS )
     {
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Acquiring OTA Mutex %p failed with Error : [0x%X] \n\r", cy_aws_ota_ctx.ota_sync_mutex, (unsigned int)cy_result );
-        return OtaPalRxFileCreateFailed;
+        return OTA_PAL_COMBINE_ERR( OtaPalRxFileCreateFailed, 0 );
     }
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Acquired OTA Mutex %p \n\r", cy_aws_ota_ctx.ota_sync_mutex );
 
     cy_aws_ota_ctx.ota_fs_ctx = C;
     cy_aws_ota_ctx.ota_flash_start_address = fap->fa_off;
+    cy_aws_ota_ctx.ota_type = (cy_ota_type_t)C->fileType;
 
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Updated OTA context... \n\r" );
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Releasing OTA Mutex %p \n\r", cy_aws_ota_ctx.ota_sync_mutex );
@@ -707,7 +719,7 @@ OtaPalStatus_t cy_awsport_ota_flash_create_receive_file( OtaFileContext_t * cons
     if( cy_result != CY_RSLT_SUCCESS )
     {
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Failed to release OTA Mutex %p failed with Error : [0x%X] \n\r", cy_aws_ota_ctx.ota_sync_mutex, (unsigned int)cy_result );
-        return OtaPalRxFileCreateFailed;
+        return OTA_PAL_COMBINE_ERR( OtaPalRxFileCreateFailed, 0 );
     }
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\nReleased OTA Mutex %p ", cy_aws_ota_ctx.ota_sync_mutex );
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "OTA receive file created.\n\r" );
@@ -718,14 +730,14 @@ OtaPalStatus_t cy_awsport_ota_flash_create_receive_file( OtaFileContext_t * cons
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Flash support is not added\n" );
 #endif
 
-    return OtaPalSuccess;
+    return OTA_PAL_COMBINE_ERR( OtaPalSuccess, 0 );
 }
 
 /*-----------------------------------------------------------*/
 OtaPalStatus_t cy_awsport_ota_flash_close_receive_file( OtaFileContext_t * const C )
 {
     cy_rslt_t        cy_result = CY_RSLT_SUCCESS;
-    OtaPalStatus_t   result = 0;
+    OtaPalStatus_t   result = OtaPalSuccess;
 
 #ifdef CY_OTA_FLASH_SUPPORT
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "%s() start ....\n\r", __func__ );
@@ -824,6 +836,32 @@ OtaPalStatus_t cy_awsport_ota_flash_close_receive_file( OtaFileContext_t * const
             result = OtaPalSignatureCheckFailed;
         }
     }
+    if(result == OtaPalSuccess)
+    {
+        uint32_t off;
+        int rc = 0;
+        const struct flash_area *fap;
+
+        fap = (const struct flash_area *)C->pFile;
+
+        /* For Device OTA, Remove the boot magic if present.
+         * Boot magic is added when the user applies image.
+         */
+        if(fap != NULL && C->fileType == CY_AWS_IOT_OTA_TYPE_DEVICE_OTA)
+        {
+            uint8_t magic_erase[BOOT_MAGIC_SZ];
+
+            off = fap->fa_size - BOOT_MAGIC_SZ;
+            memset( &magic_erase, 0xFF, BOOT_MAGIC_SZ );
+
+            /* Clear the magic num if any */
+            rc = flash_area_write( fap, off, &magic_erase, BOOT_MAGIC_SZ );
+            if( rc != 0 )
+            {
+                cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Failed to remove boot_magic.\n" );
+            }
+        }
+    }
 
 _exit_CloseFile:
     if ( C != NULL && C->pFile != NULL )
@@ -839,6 +877,7 @@ _exit_CloseFile:
     if( result != OtaPalSuccess )
     {
         current_ota_image_state = OtaImageStateUnknown;
+        cy_aws_ota_ctx.ota_type = CY_AWS_IOT_OTA_TYPE_INVALID;
     }
 
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Releasing OTA Mutex %p \n\r", cy_aws_ota_ctx.ota_sync_mutex );
@@ -856,7 +895,7 @@ _exit_CloseFile:
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Flash support is not added\n" );
 #endif
 
-    return result;
+    return OTA_PAL_COMBINE_ERR( result, 0 );
 }
 
 /*-----------------------------------------------------------*/
@@ -1036,7 +1075,7 @@ OtaPalStatus_t cy_awsport_ota_flash_activate_newimage( OtaFileContext_t * const 
     }
 
     result = cy_awsport_ota_flash_reset_device( C );
-    if( result != OtaPalSuccess )
+    if( OTA_PAL_MAIN_ERR( result ) != OtaPalSuccess )
     {
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "cy_awsport_ota_flash_reset_device failed.\n\r" );
     }
@@ -1058,12 +1097,12 @@ OtaPalStatus_t cy_awsport_ota_flash_set_platform_imagestate( OtaFileContext_t * 
 #ifdef CY_OTA_FLASH_SUPPORT
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "%s() start ....\n\r", __func__ );
 
-    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\n\rCurrent OTA image state : %d \n\r", (int)current_ota_image_state );
-    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\n\rNew OTA image state : %d \n\r", (int)eState );
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Current OTA image state : %d \n\r", (int)current_ota_image_state );
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "New OTA image state : %d \n\r", (int)eState );
 
     if( eState == OtaImageStateUnknown || eState > OtaLastImageState )
     {
-        return OtaPalBadImageState;
+        return OTA_PAL_COMBINE_ERR( OtaPalBadImageState, 0 );
     }
 
     if( cy_aws_ota_ctx.ota_fs_ctx == NULL )
@@ -1128,7 +1167,7 @@ OtaPalStatus_t cy_awsport_ota_flash_set_platform_imagestate( OtaFileContext_t * 
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Flash support is not added\n" );
 #endif
 
-    return result;
+    return OTA_PAL_COMBINE_ERR( result, 0 );
 }
 
 /*-----------------------------------------------------------*/
@@ -1192,7 +1231,7 @@ OtaPalStatus_t cy_awsport_ota_flash_reset_device( OtaFileContext_t * const C )
 #endif
 
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "%s() end ....\n\r", __func__ );
-    return OtaPalSuccess;
+    return OTA_PAL_COMBINE_ERR( OtaPalSuccess, 0 );
 }
 
 /*-----------------------------------------------------------*/
@@ -1218,6 +1257,45 @@ cy_rslt_t cy_awsport_ota_flash_image_validate( void )
 
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "%s() end ....\n\r", __func__ );
     return CY_RSLT_SUCCESS;
+}
+
+/*-----------------------------------------------------------*/
+cy_rslt_t cy_awsport_ota_remove_boot_magic(void)
+{
+    cy_rslt_t result = CY_RSLT_SUCCESS;
+
+#ifdef CY_OTA_FLASH_SUPPORT
+    const struct flash_area *fap;
+    int rc = 0;
+    uint32_t off = 0;
+
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "%s() start ....\n\r", __func__ );
+    rc = flash_area_open( FLASH_AREA_IMAGE_SECONDARY(0), &fap );
+    if(rc != 0)
+    {
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Failed to get flash handle.\n" );
+        result = CY_RSLT_AWS_IOT_PORT_ERROR_GENERAL;
+    }
+    else
+    {
+        uint8_t magic_erase[BOOT_MAGIC_SZ];
+
+        off = fap->fa_size - BOOT_MAGIC_SZ;
+        memset( &magic_erase, 0xFF, BOOT_MAGIC_SZ );
+
+        rc = flash_area_write( fap, off, &magic_erase, BOOT_MAGIC_SZ );
+        if( rc != 0 )
+        {
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Failed to remove boot_magic.\n" );
+            result = CY_RSLT_AWS_IOT_PORT_ERROR_GENERAL;
+        }
+        flash_area_close( fap );
+    }
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "%s() end ....\n\r", __func__ );
+#else
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Flash support is not added\n" );
+#endif
+    return result;
 }
 
 /*-----------------------------------------------------------*/
@@ -1267,8 +1345,8 @@ exit :
 }
 
 /*-----------------------------------------------------------*/
-cy_rslt_t cy_awsport_ota_flash_read( cy_ota_type_t ota_type, uint32_t bytes_to_read,
-                                     uint8_t * const read_buf, uint32_t read_buf_size )
+cy_rslt_t cy_awsport_ota_flash_read( uint32_t bytes_to_read, uint8_t * const read_buf,
+                                     uint32_t read_buf_size, uint32_t *bytes_received )
 {
     cy_rslt_t    cy_result = CY_RSLT_SUCCESS;
 
@@ -1276,7 +1354,7 @@ cy_rslt_t cy_awsport_ota_flash_read( cy_ota_type_t ota_type, uint32_t bytes_to_r
     uint8_t      flash_id = 0;
     int          rc = 0;
     uint32_t     invalid_bytes = 0;
-    const struct flash_area     *fap;
+    const struct flash_area     *fap = NULL;
 
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "%s() start ....\n\r", __func__ );
 
@@ -1295,20 +1373,14 @@ cy_rslt_t cy_awsport_ota_flash_read( cy_ota_type_t ota_type, uint32_t bytes_to_r
     }
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Acquired OTA Mutex %p \n\r", cy_aws_ota_ctx.ota_sync_mutex );
 
-    if( cy_aws_ota_ctx.ota_type == CY_AWS_IOT_OTA_TYPE_HOST_OTA )
+    if( cy_aws_ota_ctx.ota_type == CY_AWS_IOT_OTA_TYPE_DEVICE_OTA )
     {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Read is requested for HOTA section \n\r" );
-        /* Need to change flash area once flash section which needs to be used for HOTA is decided. */
-        flash_id = FLASH_AREA_IMAGE_SECONDARY(0);
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Read is not allowed for device OTA \n\r" );
+        (void)cy_rtos_set_mutex( &(cy_aws_ota_ctx.ota_sync_mutex) );
+        return CY_RSLT_AWS_IOT_PORT_ERROR_READ_STORAGE;
     }
-    else if( cy_aws_ota_ctx.ota_type == CY_AWS_IOT_OTA_TYPE_DEVICE_OTA )
-    {
-        flash_id = FLASH_AREA_IMAGE_SECONDARY(0);
-    }
-    else
-    {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Invalid OTA type...!!!\n\r" );
-    }
+
+    flash_id = FLASH_AREA_IMAGE_SECONDARY(0);
 
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Current read offset = %ld \n\r", cy_aws_ota_ctx.ota_flash_read_offset );
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Requested bytes = %ld \n\r", bytes_to_read );
@@ -1327,7 +1399,9 @@ cy_rslt_t cy_awsport_ota_flash_read( cy_ota_type_t ota_type, uint32_t bytes_to_r
     if( rc != 0 )
     {
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "flash_area_read() failed result:%d \n\r", __func__, rc );
-        cy_result = CY_RSLT_AWS_IOT_PORT_ERROR_READ_STORAGE;
+        flash_area_close( fap );
+        (void)cy_rtos_set_mutex( &(cy_aws_ota_ctx.ota_sync_mutex) );
+        return CY_RSLT_AWS_IOT_PORT_ERROR_READ_STORAGE;
     }
 
     if( (cy_aws_ota_ctx.ota_flash_start_address + fap->fa_size) < (cy_aws_ota_ctx.ota_flash_start_address + cy_aws_ota_ctx.ota_flash_read_offset + bytes_to_read) )
@@ -1338,6 +1412,8 @@ cy_rslt_t cy_awsport_ota_flash_read( cy_ota_type_t ota_type, uint32_t bytes_to_r
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "Last %ld bytes in read buffer are invalid...!!! \n\r", invalid_bytes );
     }
 
+    *bytes_received = bytes_to_read - invalid_bytes;
+
     flash_area_close( fap );
 
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Releasing OTA Mutex %p \n\r", cy_aws_ota_ctx.ota_sync_mutex );
@@ -1347,7 +1423,10 @@ cy_rslt_t cy_awsport_ota_flash_read( cy_ota_type_t ota_type, uint32_t bytes_to_r
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Failed to release OTA Mutex %p failed with Error : [0x%X] \n\r", cy_aws_ota_ctx.ota_sync_mutex, (unsigned int)cy_result );
         cy_result = CY_RSLT_AWS_IOT_PORT_ERROR_READ_STORAGE;
     }
-    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\nReleased OTA Mutex %p ", cy_aws_ota_ctx.ota_sync_mutex );
+    else
+    {
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\nReleased OTA Mutex %p ", cy_aws_ota_ctx.ota_sync_mutex );
+    }
 
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "%s() end ....\n\r", __func__ );
 #else
@@ -1393,4 +1472,40 @@ cy_rslt_t cy_awsport_ota_flash_seek( uint32_t offset )
     return cy_result;
 }
 
+/*-----------------------------------------------------------*/
+cy_rslt_t cy_awsport_ota_flash_erase( uint8_t flash_id )
+{
+    cy_rslt_t cy_result = CY_RSLT_SUCCESS;
+
+#ifdef CY_OTA_FLASH_SUPPORT
+    const struct flash_area *fap;
+
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "%s() start ....\n\r", __func__ );
+
+    cy_aws_ota_ctx.ota_type = CY_AWS_IOT_OTA_TYPE_INVALID;
+
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Start flash_area_open for %d...\n\r.", flash_id );
+    if( flash_area_open( flash_id, &fap ) != 0 )
+    {
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "flash_area_open(FLASH_AREA_IMAGE_SECONDARY(%d)) failed...\n\r", flash_id );
+        return CY_RSLT_AWS_IOT_PORT_ERROR_OPEN_STORAGE;
+    }
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Completed flash_area_open ...\n\r." );
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Start flash_area_erase ...\n\r." );
+    if( flash_area_erase( fap, 0, fap->fa_size ) != 0 )
+    {
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "flash_area_erase(fap, 0) (flash_id:%d) failed...\n", flash_id );
+        return CY_RSLT_AWS_IOT_PORT_ERROR_GENERAL;
+    }
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Completed flash_area_erase ...\n\r." );
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Start flash_area_close ...\n\r." );
+    flash_area_close( fap );
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "Completed flash_area_close ...\n\r." );
+
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "%s() end ....\n\r", __func__ );
+#else
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Flash support is not added\n" );
+#endif
+    return cy_result;
+}
 /*-----------------------------------------------------------*/

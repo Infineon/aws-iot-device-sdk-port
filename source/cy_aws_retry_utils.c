@@ -164,9 +164,9 @@ RetryUtilsStatus_t RetryUtils_BackoffAndSleep( RetryUtilsParams_t *pRetryParams 
         return status;
     }
 
-    /* If MAX_RETRY_ATTEMPTS is set to 0, try forever. */
-    if( ( pRetryParams->attemptsDone < MAX_RETRY_ATTEMPTS ) ||
-        ( 0 == MAX_RETRY_ATTEMPTS ) )
+    /* If CY_MQTT_MAX_RETRY_ATTEMPT is set to 0, try forever. */
+    if( ( pRetryParams->attemptsDone < CY_BACKOFF_MAX_RETRY_ATTEMPTS ) ||
+        ( 0 == CY_BACKOFF_MAX_RETRY_ATTEMPTS ) )
     {
         /* Choose a random value for back-off time between 0 and the max jitter value. */
         backoff_delay = (uint32_t)(cy_rand() % pRetryParams->nextJitterMax);
@@ -205,7 +205,6 @@ RetryUtilsStatus_t RetryUtils_BackoffAndSleep( RetryUtilsParams_t *pRetryParams 
 }
 
 /*-----------------------------------------------------------*/
-
 void RetryUtils_ParamsReset( RetryUtilsParams_t *pRetryParams )
 {
     uint32_t jitter = 0;
@@ -227,6 +226,64 @@ void RetryUtils_ParamsReset( RetryUtilsParams_t *pRetryParams )
     /* Reset the backoff value to the initial timeout value plus jitter. */
     pRetryParams->nextJitterMax = INITIAL_RETRY_BACKOFF_SECONDS + jitter;
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "Calculated next jitter max value %lu\n", pRetryParams->nextJitterMax );
+}
+
+/*-----------------------------------------------------------*/
+void cy_aws_initialize_backoff_params(  BackoffAlgorithmParams_t * pContext,
+                                        uint16_t backOffBase,
+                                        uint16_t maxBackOff,
+                                        uint32_t maxAttempts )
+{
+    if(pContext != NULL)
+    {
+        BackoffAlgorithm_InitializeParams( &( pContext->context ), backOffBase, maxBackOff, maxAttempts );
+        pContext->nextAllowedTickCount = 0U;
+    }
+}
+
+/*-----------------------------------------------------------*/
+cy_rslt_t cy_aws_get_backoff_status( BackoffAlgorithmParams_t * pContext,
+                                     bool *inBackOff )
+{
+    cy_rslt_t result = CY_RSLT_TYPE_ERROR;
+
+    if( pContext != NULL && inBackOff != NULL )
+    {
+        uint32_t currentTickCount = Clock_GetTimeMs();
+
+        result = CY_RSLT_SUCCESS;
+
+        *inBackOff = false;
+
+         /* Handle time roll over case */
+        if( ( currentTickCount < pContext->nextAllowedTickCount ) &&
+            ( ( pContext->nextAllowedTickCount - currentTickCount ) > pContext->context.maxBackoffDelay ) )
+        {
+            pContext->nextAllowedTickCount = currentTickCount;
+        }
+
+        /* Time has not elapsed. We are in Backoff */
+        if( pContext->nextAllowedTickCount > currentTickCount )
+        {
+            *inBackOff = true;
+        }
+    }
+    return ( result );
+}
+
+/*-----------------------------------------------------------*/
+cy_rslt_t cy_aws_calculate_next_backoff( BackoffAlgorithmParams_t * pContext )
+{
+    cy_rslt_t result          = CY_RSLT_SUCCESS;
+    uint16_t nextRetryBackoff = 0;
+    uint32_t currentTickCount = Clock_GetTimeMs();
+
+    ( void ) BackoffAlgorithm_GetNextBackoff( &( pContext->context ),
+                                                cy_rand(),
+                                                &nextRetryBackoff );
+    pContext->nextAllowedTickCount = nextRetryBackoff + currentTickCount;
+
+    return ( result );
 }
 
 /*-----------------------------------------------------------*/
