@@ -1,5 +1,5 @@
 /*
- * Copyright 2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -53,8 +53,14 @@
 /* OTA event context */
 OtaEventContext_t aws_ota_event_context;
 
+struct local_timer
+{
+    bool created;
+    cy_timer_t timer;
+};
+
 /* OTA Timer handles.*/
-static cy_timer_t aws_ota_timer[ OtaNumOfTimers ];
+static struct local_timer aws_ota_timer[ OtaNumOfTimers ];
 
 /* OTA Timer callback's. */
 static void awsport_ota_request_timer_callback( void *arg );
@@ -190,19 +196,12 @@ OtaOsStatus_t cy_awsport_ota_event_deinit( OtaEventContext_t *ota_event_ctx )
     ( void ) ota_event_ctx;
 
     /* Deinit the event queue.*/
-    if( aws_ota_event_context.ota_event_queue != NULL )
+    result = cy_rtos_deinit_queue( &(aws_ota_event_context.ota_event_queue) );
+    if( result != CY_RSLT_SUCCESS )
     {
-        result = cy_rtos_deinit_queue( &(aws_ota_event_context.ota_event_queue) );
-        if( result != CY_RSLT_SUCCESS )
-        {
-            aws_ota_os_status = OtaOsEventQueueDeleteFailed;
-            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "cy_rtos_get_queue failed with Error : [0x%X] \n\r", (unsigned int)result );
-            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Failed to delete OTA Event Queue.\n\r" );
-        }
-        else
-        {
-            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "OTA Event Queue Deleted.\n\r" );
-        }
+        aws_ota_os_status = OtaOsEventQueueDeleteFailed;
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "cy_rtos_get_queue failed with Error : [0x%X] \n\r", (unsigned int)result );
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Failed to delete OTA Event Queue.\n\r" );
     }
     else
     {
@@ -228,13 +227,13 @@ OtaOsStatus_t cy_awsport_ota_timer_create_start( OtaTimerId_t ota_timer_id, cons
     aws_ota_event_context.ota_timer_callback = callback;
 
     /* If timer is not created.*/
-    if( aws_ota_timer[ ota_timer_id ] == NULL )
+    if( aws_ota_timer[ ota_timer_id ].created == false )
     {
         /* Create the timer. */
-        result = cy_rtos_init_timer( &(aws_ota_timer[ ota_timer_id ]), CY_TIMER_TYPE_ONCE,
+        result = cy_rtos_init_timer( &(aws_ota_timer[ ota_timer_id ].timer), CY_TIMER_TYPE_ONCE,
                                      ( cy_timer_callback_t )timer_callback[ ota_timer_id ],
                                      ( cy_timer_callback_arg_t )NULL );
-        if( (result != CY_RSLT_SUCCESS) || (aws_ota_timer[ ota_timer_id ] == NULL) )
+        if( result != CY_RSLT_SUCCESS )
         {
             aws_ota_timer_status = OtaOsTimerCreateFailed;
             cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "cy_rtos_init_timer failed with Error : [0x%X] \n\r", (unsigned int)result );
@@ -242,9 +241,10 @@ OtaOsStatus_t cy_awsport_ota_timer_create_start( OtaTimerId_t ota_timer_id, cons
         }
         else
         {
+            aws_ota_timer[ ota_timer_id ].created = true;
             cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "OTA Timer created.\n\r" );
             /* Start the timer. */
-            result = cy_rtos_start_timer( &(aws_ota_timer[ ota_timer_id ]), timeout );
+            result = cy_rtos_start_timer( &(aws_ota_timer[ ota_timer_id ].timer), timeout );
             if( result != CY_RSLT_SUCCESS )
             {
                 aws_ota_timer_status = OtaOsTimerStartFailed;
@@ -260,7 +260,7 @@ OtaOsStatus_t cy_awsport_ota_timer_create_start( OtaTimerId_t ota_timer_id, cons
     else
     {
         /* Reset the timer. */
-        result = cy_rtos_start_timer( &(aws_ota_timer[ ota_timer_id ]), timeout );
+        result = cy_rtos_start_timer( &(aws_ota_timer[ ota_timer_id ].timer), timeout );
         if( result != CY_RSLT_SUCCESS )
         {
             aws_ota_timer_status = OtaOsTimerRestartFailed;
@@ -287,10 +287,10 @@ OtaOsStatus_t cy_awsport_ota_timer_stop( OtaTimerId_t ota_timer_id )
         return OtaOsTimerStopFailed;
     }
 
-    if( aws_ota_timer[ ota_timer_id ] != NULL )
+    if( aws_ota_timer[ ota_timer_id ].created )
     {
         /* Stop the timer. */
-        result = cy_rtos_stop_timer( &(aws_ota_timer[ ota_timer_id ]) );
+        result = cy_rtos_stop_timer( &(aws_ota_timer[ ota_timer_id ].timer) );
         if( result != CY_RSLT_SUCCESS )
         {
             aws_ota_timer_status = OtaOsTimerStopFailed;
@@ -323,10 +323,10 @@ OtaOsStatus_t cy_awsport_ota_timer_delete( OtaTimerId_t ota_timer_id )
         return OtaOsTimerDeleteFailed;
     }
 
-    if( aws_ota_timer[ ota_timer_id ] != NULL )
+    if( aws_ota_timer[ ota_timer_id ].created )
     {
         /* Delete the timer. */
-        result = cy_rtos_deinit_timer( &(aws_ota_timer[ ota_timer_id ]) );
+        result = cy_rtos_deinit_timer( &(aws_ota_timer[ ota_timer_id ].timer) );
         if( result != CY_RSLT_SUCCESS )
         {
             aws_ota_timer_status = OtaOsTimerDeleteFailed;
@@ -335,7 +335,7 @@ OtaOsStatus_t cy_awsport_ota_timer_delete( OtaTimerId_t ota_timer_id )
         }
         else
         {
-            aws_ota_timer[ ota_timer_id ] = NULL;
+            aws_ota_timer[ ota_timer_id ].created = false;
             cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "OTA Timer deleted. \n\r" );
         }
     }

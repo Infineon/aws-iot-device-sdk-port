@@ -1,5 +1,5 @@
 /*
- * Copyright 2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -49,9 +49,10 @@
 /**
  * AWS OTA Event Context structure.
  */
+
 struct OtaEventContext
 {
-    QueueHandle_t      ota_event_queue;    /* The queue control handle. */
+    cy_queue_t ota_event_queue;    /* The queue control handle. */
     OtaTimerCallback_t ota_timer_callback; /* OTA App Timer callback. */
 };
 

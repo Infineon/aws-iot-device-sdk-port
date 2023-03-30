@@ -1,5 +1,5 @@
 /*
- * Copyright 2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -49,13 +49,13 @@
 #include "psa/crypto.h"
 #endif
 
-#ifdef COMPONENT_43907
+#ifdef COMPONENT_4390X
 extern cy_rslt_t cy_prng_get_random( void* buffer, uint32_t buffer_length );
 #endif
 
 /*-----------------------------------------------------------*/
 #ifndef CY_TFM_PSA_SUPPORTED
-#ifndef COMPONENT_43907
+#ifndef COMPONENT_4390X
 static int trng_get_bytes( cyhal_trng_t *obj, uint8_t *output, size_t length, size_t *output_length )
 {
     uint32_t offset = 0;
@@ -102,8 +102,8 @@ int generate_random_number( void *buffer, size_t buffer_length, size_t *output_l
     }
 
     *output_length = buffer_length;
-#elif defined(COMPONENT_43907)
-    /* 43907 kits does not have TRNG module. Get the random
+#elif defined(COMPONENT_4390X)
+    /* 4390X kits does not have TRNG module. Get the random
      * number from wifi-mw-core internal PRNG API. */
     cy_rslt_t result;
     result = cy_prng_get_random(buffer, buffer_length);
@@ -133,7 +133,7 @@ int generate_random_number( void *buffer, size_t buffer_length, size_t *output_l
     return 0;
 }
 
-uint32_t cy_rand( void )
+static uint32_t cy_rand( void )
 {
     int ret = 0;
     uint16_t  r[2];

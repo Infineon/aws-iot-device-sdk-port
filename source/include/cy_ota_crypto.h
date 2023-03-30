@@ -1,5 +1,5 @@
 /*
- * Copyright 2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -42,6 +42,8 @@
 #include "cyabs_rtos.h"
 #include "cy_aws_iot_port_error.h"
 
+#ifdef COMPONENT_MBEDTLS
+
 /* mbedTLS includes. */
 #if !defined( MBEDTLS_CONFIG_FILE )
     #include "mbedtls/config.h"
@@ -55,6 +57,7 @@
 #include "mbedtls/pk.h"
 #include "mbedtls/x509_crt.h"
 
+#endif
 /**
  * Commonly used buffer sizes for storing cryptographic hash computation results.
  */

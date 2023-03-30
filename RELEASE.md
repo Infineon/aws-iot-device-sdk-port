@@ -11,6 +11,10 @@ See [README.md](./README.md) for details.
 
 ## Changelog
 
+### v2.2.3
+- Made FreeRTOS specific code generic.
+- Changes to rename COMPONENT_43907 to COMPONENT_4390X
+
 ### v2.2.2
 - Added API to verify certificate using signer certificate.
 - Added Flash erase API and Updated Flash read, seek APIs to handle HOTA updates and certificate updates.
