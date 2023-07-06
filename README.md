@@ -1,6 +1,6 @@
 # AWS IoT Device SDK Port Library
 
-This library is a port layer implementation for the Infineon MQTT and HTTP Client libraries to work with the AWS-IoT-Device-SDK-Embedded-C library on Infineon PSoC® 6 MCU connectivity-enabled platforms. These library APIs are not expected to be called by application directly. See the MQTT and HTTP Client library documentation for more details.
+This library is a port layer implementation for the Infineon MQTT and HTTP Client libraries to work with the AWS-IoT-Device-SDK-Embedded-C library on Infineon connectivity-enabled MCU platforms. These library APIs are not expected to be called by application directly. See the MQTT and HTTP Client library documentation for more details.
 
 ## OTA Support
 
@@ -14,19 +14,14 @@ By default, OTA support is disabled. To enable OTA support follow below steps.
 
 2. Create a *.mtb* files for anycloud-ota and serial-flash as follows and add *.mtb* file along with other dependent library *.mtb* files:
 
-   *anycloud-ota.mtb*: https://github.com/Infineon/anycloud-ota#release-v4.1.0#$$ASSET_REPO$$/anycloud-ota/ <br>
-   *serial-flash.mtb*: https://github.com/Infineon/serial-flash#latest-v1.X#$$ASSET_REPO$$/serial-flash/
+   *anycloud-ota.mtb*: `https://github.com/Infineon/anycloud-ota#release-v4.1.0#$$ASSET_REPO$$/anycloud-ota/`
+   *serial-flash.mtb*: `https://github.com/Infineon/serial-flash#latest-v1.X#$$ASSET_REPO$$/serial-flash/`
 
 3. Execute the `make getlibs` command.
 
 4. The reference file *./configs/ota_config.h* that is bundled with this library provides the default configurations required for the [AWS IoT device SDK](https://github.com/aws/aws-iot-device-sdk-embedded-C/tree/202103.00) OTA library. Copy the reference file *./configs/ota_config.h* to application root folder, tune the OTA configuaration parameter as required by application and add OTA signing certificate to macro `AWS_IOT_OTA_SIGNING_CERT`.
 
-5. Add the anycloud-ota library configs include path. This is required to compile the aws-iot-device-sdk-port library with OTA support. The Makefile entry should look like as follows:
-   ```
-   INCLUDES+=libs/anycloud-ota/configs/
-   ```
-
-6. Build application using `make build` command.
+5. Build application using `make build` command.
 
 
 ## Additional Information
