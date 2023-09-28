@@ -474,13 +474,15 @@ cy_rslt_t cy_awsport_network_disconnect( NetworkContext_t *network_context )
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nInvalid parameter to cy_socket_disconnect.!\n" );
         return CY_RSLT_MODULE_SECURE_SOCKETS_BADARG;
     }
-    /* Disconnect the network connection. */
-    result = cy_socket_disconnect( network_context->handle, 0 );
-    if( ( result !=  CY_RSLT_SUCCESS ) && ( result != CY_RSLT_MODULE_SECURE_SOCKETS_NOT_CONNECTED ) )
+    if(network_context->handle != NULL)
     {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_disconnect failed with Error : [0x%X] ", (unsigned int)result );
+        /* Disconnect the network connection. */
+        result = cy_socket_disconnect( network_context->handle, 0 );
+        if( ( result !=  CY_RSLT_SUCCESS ) && ( result != CY_RSLT_MODULE_SECURE_SOCKETS_NOT_CONNECTED ) )
+        {
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_disconnect failed with Error : [0x%X] ", (unsigned int)result );
+        }
     }
-
     return result;
 }
 
@@ -518,13 +520,16 @@ cy_rslt_t cy_awsport_network_delete( NetworkContext_t *network_context )
         network_context->is_rootca_loaded = false;
     }
 
-    /* Clean up the context of secure sockets connections. */
-    result = cy_socket_delete( network_context->handle );
-    if( result != CY_RSLT_SUCCESS )
+    if(network_context->handle != NULL)
     {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_delete failed with Error : [0x%X] ", (unsigned int)result );
+        /* Clean up the context of secure sockets connections. */
+        result = cy_socket_delete( network_context->handle );
+        if( result != CY_RSLT_SUCCESS )
+        {
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_delete failed with Error : [0x%X] ", (unsigned int)result );
+        }
+        network_context->handle = NULL;
     }
-    network_context->handle = NULL;
 
     return result;
 }

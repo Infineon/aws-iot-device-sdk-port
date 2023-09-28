@@ -53,9 +53,14 @@
 extern cy_rslt_t cy_prng_get_random( void* buffer, uint32_t buffer_length );
 #endif
 
+#ifdef COMPONENT_CAT5
+extern uint32_t thread_ap_rbg_rand(void);
+#endif
+
 /*-----------------------------------------------------------*/
 #ifndef CY_TFM_PSA_SUPPORTED
 #ifndef COMPONENT_4390X
+#ifndef COMPONENT_CAT5
 static int trng_get_bytes( cyhal_trng_t *obj, uint8_t *output, size_t length, size_t *output_length )
 {
     uint32_t offset = 0;
@@ -86,6 +91,7 @@ static int trng_get_bytes( cyhal_trng_t *obj, uint8_t *output, size_t length, si
 }
 #endif
 #endif
+#endif
 int generate_random_number( void *buffer, size_t buffer_length, size_t *output_length )
 {
 #ifdef CY_TFM_PSA_SUPPORTED
@@ -112,6 +118,9 @@ int generate_random_number( void *buffer, size_t buffer_length, size_t *output_l
         return -1;
     }
     *output_length = buffer_length;
+#elif defined(COMPONENT_CAT5)
+    *((uint32_t *)buffer) = thread_ap_rbg_rand();
+    *output_length = 4;
 #else
     uint8_t *p = buffer;
     size_t length = 0;

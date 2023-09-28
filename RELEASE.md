@@ -11,6 +11,10 @@ See [README.md](./README.md) for details.
 
 ## Changelog
 
+### v2.3.0
+- Minor bug fixes.
+- Added support for KIT_XMC72_EVK_MUR_43439M2 kit
+
 ### v2.2.4
 - Minor Documentation Update.
 
