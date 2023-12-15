@@ -11,6 +11,10 @@ See [README.md](./README.md) for details.
 
 ## Changelog
 
+### v2.4.0
+- Supports Mbed TLS version 3.4.0
+- Added support for CY8CEVAL-062S2-CYW43022CUB kit
+
 ### v2.3.0
 - Minor bug fixes.
 - Added support for KIT_XMC72_EVK_MUR_43439M2 kit

@@ -41,15 +41,9 @@
 
 #include "cyabs_rtos.h"
 #include "cy_aws_iot_port_error.h"
+#include "version.h"
 
 #ifdef COMPONENT_MBEDTLS
-
-/* mbedTLS includes. */
-#if !defined( MBEDTLS_CONFIG_FILE )
-    #include "mbedtls/config.h"
-#else
-    #include MBEDTLS_CONFIG_FILE
-#endif
 
 #include "mbedtls/platform.h"
 #include "mbedtls/sha256.h"

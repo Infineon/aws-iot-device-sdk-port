@@ -39,6 +39,7 @@
 #include <string.h>
 #include "cy_ota_crypto.h"
 #include "cy_aws_iot_sdk_port_log.h"
+#include "cy_aws_port_mbedtls_version.h"
 
 /**
  * Internal signature verification context structure
@@ -136,12 +137,21 @@ cy_rslt_t cy_crypto_sign_verification_start( void **ppvContext,
     if( CY_CRYPTO_HASH_ALGORITHM_SHA1 == pxCtx->xHashAlgorithm )
     {
         mbedtls_sha1_init( &(pxCtx->xSHA_Context.xSHA1Context) );
+
+#if MBEDTLS_VERSION_MAJOR == MBEDTLS_VERSION_MAJOR_3
+        ( void ) mbedtls_sha1_starts( &(pxCtx->xSHA_Context.xSHA1Context) );
+#else
         ( void ) mbedtls_sha1_starts_ret( &(pxCtx->xSHA_Context.xSHA1Context) );
+#endif
     }
     else
     {
         mbedtls_sha256_init( &(pxCtx->xSHA_Context.xSHA256Context) );
+#if MBEDTLS_VERSION_MAJOR == MBEDTLS_VERSION_MAJOR_3
+        ( void ) mbedtls_sha256_starts( &(pxCtx->xSHA_Context.xSHA256Context), 0 );
+#else
         ( void ) mbedtls_sha256_starts_ret( &(pxCtx->xSHA_Context.xSHA256Context), 0 );
+#endif
     }
 
     return CY_RSLT_SUCCESS;
@@ -169,11 +179,19 @@ void cy_crypto_sign_verification_update( void *pvContext,
         /* Add the data to the hash of the requested type */
         if( CY_CRYPTO_HASH_ALGORITHM_SHA1 == pxCtx->xHashAlgorithm )
         {
+#if MBEDTLS_VERSION_MAJOR == MBEDTLS_VERSION_MAJOR_3
+            ( void ) mbedtls_sha1_update( &(pxCtx->xSHA_Context.xSHA1Context), pucData, xDataLength );
+#else
             ( void ) mbedtls_sha1_update_ret( &(pxCtx->xSHA_Context.xSHA1Context), pucData, xDataLength );
+#endif
         }
         else
         {
+#if MBEDTLS_VERSION_MAJOR == MBEDTLS_VERSION_MAJOR_3
+            ( void ) mbedtls_sha256_update( &(pxCtx->xSHA_Context.xSHA256Context), pucData, xDataLength );
+#else
             ( void ) mbedtls_sha256_update_ret( &(pxCtx->xSHA_Context.xSHA256Context), pucData, xDataLength );
+#endif
         }
     }
 }
@@ -211,13 +229,21 @@ cy_rslt_t cy_crypto_sign_verification_final( void * pvContext,
             /* Finish the hash */
             if( CY_CRYPTO_HASH_ALGORITHM_SHA1 == pxCtx->xHashAlgorithm )
             {
+#if MBEDTLS_VERSION_MAJOR == MBEDTLS_VERSION_MAJOR_3
+                ( void ) mbedtls_sha1_finish( &(pxCtx->xSHA_Context.xSHA1Context), ucSHA1or256 );
+#else
                 ( void ) mbedtls_sha1_finish_ret( &(pxCtx->xSHA_Context.xSHA1Context), ucSHA1or256 );
+#endif
                 pucHash = ucSHA1or256;
                 xHashLength = CY_CRYPTO_SHA1_DIGEST_BYTES;
             }
             else
             {
+#if MBEDTLS_VERSION_MAJOR == MBEDTLS_VERSION_MAJOR_3
+                ( void ) mbedtls_sha256_finish( &(pxCtx->xSHA_Context.xSHA256Context), ucSHA1or256 );
+#else
                 ( void ) mbedtls_sha256_finish_ret( &(pxCtx->xSHA_Context.xSHA256Context), ucSHA1or256 );
+#endif
                 pucHash = ucSHA1or256;
                 xHashLength = CY_CRYPTO_SHA256_DIGEST_BYTES;
             }
