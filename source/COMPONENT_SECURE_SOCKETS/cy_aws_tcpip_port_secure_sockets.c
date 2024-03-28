@@ -1,5 +1,5 @@
 /*
- * Copyright 2023, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -95,11 +95,11 @@ cy_rslt_t cy_awsport_network_init( void )
     result = cy_socket_init();
     if ( result != CY_RSLT_SUCCESS )
     {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Secure Sockets initialization failed with Error : [0x%X] ", (unsigned int)result );
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSecure Sockets initialization failed with Error : [0x%X]\n", (unsigned int)result );
         return result;
     }
 
-    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Secure Sockets initialization completed\n" );
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\nSecure Sockets initialization completed\n" );
     return result;
 }
 
@@ -111,10 +111,10 @@ cy_rslt_t cy_awsport_network_deinit( void )
     result = cy_socket_deinit();
     if ( result != CY_RSLT_SUCCESS )
     {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "Secure Sockets deinitialization failed with Error : [0x%X] ", (unsigned int)result );
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSecure Sockets deinitialization failed with Error : [0x%X]\n", (unsigned int)result );
     }
 
-    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "Secure Sockets deinitialization completed!\n" );
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\nSecure Sockets deinitialization completed!\n" );
     return result;
 }
 
@@ -136,7 +136,7 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
 
     if( (network_context == NULL) || (server_info == NULL) )
     {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "\nInvalid parameter to cy_awsport_network_create.!\n" );
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nInvalid parameter to cy_awsport_network_create.!\n" );
         return CY_RSLT_MODULE_SECURE_SOCKETS_BADARG;
     }
 
@@ -151,7 +151,7 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
     result = cy_socket_gethostbyname( server_info->host_name, CY_SOCKET_IP_VER_V4, &ip_addr );
     if( result != CY_RSLT_SUCCESS )
     {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_gethostbyname failed with Error : [0x%X] ", (unsigned int)result );
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_gethostbyname failed with Error : [0x%X]\n", (unsigned int)result );
         goto exit;
     }
 
@@ -170,7 +170,7 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
             result = cy_tls_load_global_root_ca_certificates( ssl_credentials->root_ca, ssl_credentials->root_ca_size - 1 );
             if( result != CY_RSLT_SUCCESS )
             {
-                cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "\ncy_tls_load_global_root_ca_certificates failed with Error : [0x%X] ", (unsigned int)result );
+                cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_tls_load_global_root_ca_certificates failed with Error : [0x%X]\n", (unsigned int)result );
                 goto exit;
             }
             network_context->is_rootca_loaded = true;
@@ -212,7 +212,7 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
                                              &(network_context->tls_identity) );
             if( result != CY_RSLT_SUCCESS )
             {
-                cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_tls_create_identity failed with Error : [0x%X] ", (unsigned int)result );
+                cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_tls_create_identity failed with Error : [0x%X]\n", (unsigned int)result );
                 goto exit;
             }
         }
@@ -221,7 +221,7 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
                                    CY_SOCKET_IPPROTO_TLS, &(network_context->handle) );
         if( result != CY_RSLT_SUCCESS )
         {
-            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSocket create failed with Error : [0x%X] ", (unsigned int)result );
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSocket create failed with Error : [0x%X]\n", (unsigned int)result );
             goto exit;
         }
 
@@ -246,7 +246,7 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
                                        (uint32_t) sizeof( cert_location ) );
         if( result != CY_RSLT_SUCCESS )
         {
-            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_setsockopt failed with Error : [0x%X] ", (unsigned int)result );
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_setsockopt failed with Error : [0x%X]\n", (unsigned int)result );
             goto exit;
         }
 #endif
@@ -262,7 +262,7 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
                                            (uint32_t) sizeof( network_context->tls_identity ) );
             if( result != CY_RSLT_SUCCESS )
             {
-                cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_setsockopt failed with Error : [0x%X] ", (unsigned int)result );
+                cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_setsockopt failed with Error : [0x%X]\n", (unsigned int)result );
                 goto exit;
             }
         }
@@ -286,7 +286,7 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
                                        (uint32_t) sizeof( cert_location ) );
         if( result != CY_RSLT_SUCCESS )
         {
-            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_setsockopt failed with Error : [0x%X] ", (unsigned int)result );
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_setsockopt failed with Error : [0x%X]\n", (unsigned int)result );
             goto exit;
         }
 #endif
@@ -296,7 +296,7 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
                                        (uint32_t) sizeof( authmode ) );
         if( result != CY_RSLT_SUCCESS )
         {
-            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSetting TLS auth mode failed with Error : [0x%X] ", (unsigned int)result );
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSetting TLS auth mode failed with Error : [0x%X]\n", (unsigned int)result );
             goto exit;
         }
 
@@ -307,7 +307,7 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
                                            (uint32_t) (ssl_credentials->sni_host_name_size - 1) );
             if( result != CY_RSLT_SUCCESS )
             {
-                cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSetting SNI name failed with Error : [0x%X] ", (unsigned int)result );
+                cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSetting SNI name failed with Error : [0x%X]\n", (unsigned int)result );
                 goto exit;
             }
         }
@@ -318,7 +318,7 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
                                    CY_SOCKET_IPPROTO_TCP, &(network_context->handle) );
         if( result != CY_RSLT_SUCCESS )
         {
-            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSocket create failed with Error : [0x%X] ", (unsigned int)result );
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSocket create failed with Error : [0x%X]\n", (unsigned int)result );
             goto exit;
         }
 
@@ -369,9 +369,9 @@ exit:
     }
     else
     {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "\n(Network connection %p) New network connection established.", network_context );
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "\nNew network connection handle : %p.", network_context->handle );
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "\nNew network connection tls_identity : %p.", network_context->tls_identity );
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "\n(Network connection %p) New network connection established.\n", network_context );
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "\nNew network connection handle : %p.\n", network_context->handle );
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "\nNew network connection tls_identity : %p.\n", network_context->tls_identity );
     }
     return result;
 }
@@ -393,7 +393,7 @@ cy_rslt_t cy_awsport_network_connect( NetworkContext_t *network_context,
                                 sizeof(cy_socket_sockaddr_t) );
     if( result != CY_RSLT_SUCCESS )
     {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_connect failed with Error : [0x%X] ", (unsigned int)result );
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_connect failed with Error : [0x%X]\n", (unsigned int)result );
         return result;
     }
     cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_INFO, "\ncy_socket_connect Success\n" );
@@ -406,7 +406,7 @@ cy_rslt_t cy_awsport_network_connect( NetworkContext_t *network_context,
                                    &recv_timeout_ms, sizeof( recv_timeout_ms ) );
     if( result != CY_RSLT_SUCCESS )
     {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSet receive timeout for socket handle = %p failed with Error : [0x%X]",
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSet receive timeout for socket handle = %p failed with Error : [0x%X]\n",
                        network_context->handle, ( unsigned int )result );
         return result;
     }
@@ -419,7 +419,7 @@ cy_rslt_t cy_awsport_network_connect( NetworkContext_t *network_context,
                                    &send_timeout_ms, sizeof( send_timeout_ms ) );
     if( result != CY_RSLT_SUCCESS )
     {
-        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSet send timeout for socket handle = %p failed with Error : [0x%X]",
+        cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSet send timeout for socket handle = %p failed with Error : [0x%X]\n",
                        network_context->handle, ( unsigned int )result );
         return result;
     }
@@ -438,7 +438,7 @@ cy_rslt_t cy_awsport_network_connect( NetworkContext_t *network_context,
                                        &socket_callback, sizeof(socket_callback) );
         if( result != CY_RSLT_SUCCESS )
         {
-            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSet socket disconnect notification for socket handle = %p failed with Error : [0x%X]",
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSet socket disconnect notification for socket handle = %p failed with Error : [0x%X]\n",
                            network_context->handle, ( unsigned int )result );
             return result;
         }
@@ -457,7 +457,7 @@ cy_rslt_t cy_awsport_network_connect( NetworkContext_t *network_context,
                                        &socket_callback, sizeof(socket_callback) );
         if( result != CY_RSLT_SUCCESS )
         {
-            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSet socket data receive notification for socket handle = %p failed with Error : [0x%X]", network_context->handle, ( unsigned int )result );
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nSet socket data receive notification for socket handle = %p failed with Error : [0x%X]\n", network_context->handle, ( unsigned int )result );
             return result;
         }
     }
@@ -480,7 +480,7 @@ cy_rslt_t cy_awsport_network_disconnect( NetworkContext_t *network_context )
         result = cy_socket_disconnect( network_context->handle, 0 );
         if( ( result !=  CY_RSLT_SUCCESS ) && ( result != CY_RSLT_MODULE_SECURE_SOCKETS_NOT_CONNECTED ) )
         {
-            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_disconnect failed with Error : [0x%X] ", (unsigned int)result );
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_disconnect failed with Error : [0x%X]\n", (unsigned int)result );
         }
     }
     return result;
@@ -502,7 +502,7 @@ cy_rslt_t cy_awsport_network_delete( NetworkContext_t *network_context )
         result = cy_tls_delete_identity( network_context->tls_identity );
         if( result != CY_RSLT_SUCCESS )
         {
-            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_tls_delete_identity failed with Error : [0x%X] ", (unsigned int)result );
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_tls_delete_identity failed with Error : [0x%X]\n", (unsigned int)result );
             return result;
         }
         network_context->tls_identity = NULL;
@@ -514,7 +514,7 @@ cy_rslt_t cy_awsport_network_delete( NetworkContext_t *network_context )
         result = cy_tls_release_global_root_ca_certificates();
         if( result != CY_RSLT_SUCCESS )
         {
-            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_tls_release_global_root_ca_certificates failed with Error : [0x%X] ", (unsigned int)result );
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_tls_release_global_root_ca_certificates failed with Error : [0x%X]\n", (unsigned int)result );
             return result;
         }
         network_context->is_rootca_loaded = false;
@@ -526,7 +526,7 @@ cy_rslt_t cy_awsport_network_delete( NetworkContext_t *network_context )
         result = cy_socket_delete( network_context->handle );
         if( result != CY_RSLT_SUCCESS )
         {
-            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_delete failed with Error : [0x%X] ", (unsigned int)result );
+            cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\ncy_socket_delete failed with Error : [0x%X]\n", (unsigned int)result );
         }
         network_context->handle = NULL;
     }
@@ -545,7 +545,7 @@ int32_t cy_awsport_network_receive( NetworkContext_t *network_context, void *buf
         return bytes_received;
     }
 
-    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\n(Socket handle %p) requesting %lu bytes.", network_context->handle, ( unsigned long )bytes_recv );
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\n(Socket handle %p) requesting %lu bytes.\n", network_context->handle, ( unsigned long )bytes_recv );
 
     result = cy_socket_recv( network_context->handle, buffer, bytes_recv, 0, (uint32_t *)&bytes_received );
     if( result != CY_RSLT_SUCCESS )
@@ -563,7 +563,7 @@ int32_t cy_awsport_network_receive( NetworkContext_t *network_context, void *buf
         }
     }
 
-    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\n(Socket handle %p) received %lu bytes.", network_context->handle, ( unsigned long )bytes_received );
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\n(Socket handle %p) received %lu bytes.\n", network_context->handle, ( unsigned long )bytes_received );
     return bytes_received;
 }
 
@@ -577,7 +577,7 @@ int32_t cy_awsport_network_send( NetworkContext_t *network_context, const void *
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "\nInvalid parameter to cy_awsport_network_send.!\n" );
         return bytes_sent;
     }
-    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\n(Socket handle %p) Sending %lu bytes.", network_context->handle, ( unsigned long ) bytes_send );
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\n(Socket handle %p) Sending %lu bytes.\n", network_context->handle, ( unsigned long ) bytes_send );
 
     result = cy_socket_send( network_context->handle, buffer, bytes_send, 0, (uint32_t *)&bytes_sent );
     if( result != CY_RSLT_SUCCESS )
@@ -595,6 +595,6 @@ int32_t cy_awsport_network_send( NetworkContext_t *network_context, const void *
         }
     }
 
-    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\n(Socket handle %p) sent %lu bytes.", network_context->handle, ( unsigned long )bytes_sent );
+    cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_DEBUG, "\n(Socket handle %p) sent %lu bytes.\n", network_context->handle, ( unsigned long )bytes_sent );
     return( bytes_sent );
 }

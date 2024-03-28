@@ -1,5 +1,5 @@
 /*
- * Copyright 2023, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -446,7 +446,7 @@ static OtaPalStatus_t ota_pal_file_sign_check_final( OtaFileContext_t * const C 
         return OtaPalBadSignerCert;
     }
 
-    if( ( ota_pal_skip_sign_check( C ) != true ) && ( ( ota_signer_cert == NULL ) || ( ota_signer_cert_size == 0 ) ) )
+    if( ( ota_pal_skip_sign_check( C ) != true ) && ( ( ota_signer_cert == NULL ) || ( ota_signer_cert_size == 0 ) || ( C->pSignature->size == 0 ) ) )
     {
         ota_pal_file_sign_check_deinit();
         cy_ap_log_msg( CYLF_MIDDLEWARE, CY_LOG_ERR, "ota_pal_file_sign_check_final failed\n\r" );

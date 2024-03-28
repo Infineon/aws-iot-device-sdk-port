@@ -7,9 +7,12 @@ See [README.md](./README.md) for details.
 ## Known Issues
 | Problem | Workaround |
 | ------- | ---------- |
-| IAR 9.30 toolchain throws build errors on Debug mode, if application explicitly includes iar_dlmalloc.h file | Add '--advance-heap' to LDFLAGS in application Makefile. |
+| IAR 9.40.2 toolchain throws build errors on Debug mode, if application explicitly includes iar_dlmalloc.h file | Add '--advanced_heap' to LDFLAGS in application Makefile. |
 
 ## Changelog
+
+### v2.4.1
+- Added changes to eliminate use of HAL TRNG APIs
 
 ### v2.4.0
 - Supports Mbed TLS version 3.4.0
@@ -63,8 +66,8 @@ This version of the library was validated for compatibility with the following s
 
 | Software and Tools                                        | Version |
 | :---                                                      | :----:  |
-| ModusToolbox&trade; Software Environment                  | 3.1     |
-| ModusToolbox&trade; Device Configurator                   | 4.10    |
+| ModusToolbox&trade; Software Environment                  | 3.2     |
+| ModusToolbox&trade; Device Configurator                   | 4.20    |
 | GCC Compiler                                              | 11.3.1  |
-| IAR Compiler                                              | 9.30    |
+| IAR Compiler                                              | 9.40.2  |
 | Arm Compiler 6                                            | 6.16    |
