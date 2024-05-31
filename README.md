@@ -42,4 +42,4 @@ By default, OTA support is disabled. To enable OTA support follow below steps.
 
 - [ModusToolbox&trade; Software Environment, Quick Start Guide, Documentation, and Videos](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software/)
 
-- [ModusToolbox&trade; code examples](https://github.com/Infineon?q=mtb-example-anycloud%20NOT%20Deprecated)
+- [ModusToolbox&trade; code examples](https://github.com/Infineon/Code-Examples-for-ModusToolbox-Software)

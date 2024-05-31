@@ -53,16 +53,12 @@
 extern cy_rslt_t cy_network_random_number_generate( unsigned char *output, size_t len, size_t *olen );
 #endif
 
-#ifdef COMPONENT_CAT5
-extern uint32_t thread_ap_rbg_rand(void);
-#endif
-
 /*-----------------------------------------------------------*/
 
 int generate_random_number( void *buffer, size_t buffer_length, size_t *output_length )
 {
 #if defined(COMPONENT_CAT5)
-    *((uint32_t *)buffer) = thread_ap_rbg_rand();
+    *((uint32_t *)buffer) = thread_ap_rbg_rand(1);
     *output_length = 4;
     return 0;
 #elif defined(COMPONENT_MBEDTLS)

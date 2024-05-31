@@ -11,6 +11,9 @@ See [README.md](./README.md) for details.
 
 ## Changelog
 
+### v2.5.0
+- Added support for CYW955913EVK-01 kit
+
 ### v2.4.1
 - Added changes to eliminate use of HAL TRNG APIs
 
