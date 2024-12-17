@@ -204,11 +204,15 @@ cy_rslt_t cy_awsport_network_create( NetworkContext_t *network_context,
             }
         }
 #endif
-        if( (ssl_credentials->client_cert != NULL) && (ssl_credentials->client_cert_size > 0) &&
-            (ssl_credentials->private_key != NULL) && (ssl_credentials->private_key_size > 0) )
+        if( (ssl_credentials->client_cert != NULL) && (ssl_credentials->client_cert_size > 0)
+#if defined (COMPONENT_MBEDTLS) || !defined(CY_SECURE_SOCKETS_PKCS_SUPPORT)
+            && (ssl_credentials->private_key != NULL) && (ssl_credentials->private_key_size > 0)
+#endif
+        )
         {
             result = cy_tls_create_identity( ssl_credentials->client_cert, ssl_credentials->client_cert_size - 1,
-                                             ssl_credentials->private_key, ssl_credentials->private_key_size - 1,
+                                             ssl_credentials->private_key,
+                                             (ssl_credentials->private_key_size > 0) ? (ssl_credentials->private_key_size - 1) : 0,
                                              &(network_context->tls_identity) );
             if( result != CY_RSLT_SUCCESS )
             {

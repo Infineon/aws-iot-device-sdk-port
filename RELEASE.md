@@ -11,6 +11,9 @@ See [README.md](./README.md) for details.
 
 ## Changelog
 
+### v2.6.0
+- Added support to create TLS identity without private key.
+
 ### v2.5.0
 - Added support for CYW955913EVK-01 kit
 
