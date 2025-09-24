@@ -1,5 +1,5 @@
 /*
- * Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2025, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -41,8 +41,16 @@
 
 /* Standard include. */
 #include <stdint.h>
-
 #include "backoff_algorithm.h"
+
+/* Common DEFINE for XMC4X devices for Full Hobbes Update 
+ * Platforms covered under this DEFINE are as follows:
+ * XMC43XX, XMC44XX, XMC45XX, XMC47XX, XMC48XX
+ */
+#if defined(COMPONENT_XMC43XX) || defined(COMPONENT_XMC44XX) || defined(COMPONENT_XMC45XX) || defined(COMPONENT_XMC47XX) || defined(COMPONENT_XMC48XX)
+    #define CY_XMC4XXX_DEVICES
+#endif
+
 /**
  * @brief Max number of retry attempts. Set this value to 0 if the client must
  * retry forever.

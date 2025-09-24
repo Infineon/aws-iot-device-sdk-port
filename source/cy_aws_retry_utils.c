@@ -1,5 +1,5 @@
 /*
- * Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2025, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -40,7 +40,11 @@
 #include <stdlib.h>
 #include <time.h>
 #include "cy_result.h"
+#ifdef COMPONENT_MTB_HAL
+#include "mtb_hal.h"
+#else
 #include "cyhal.h"
+#endif
 #include "cy_retry_utils.h"
 #include "cy_aws_iot_sdk_port_log.h"
 #include "clock.h"
@@ -49,7 +53,7 @@
 #include "entropy_poll.h"
 #endif
 
-#if defined (COMPONENT_NETXSECURE) && defined (COMPONENT_CAT1)
+#if defined (COMPONENT_NETXSECURE) && !defined(CY_XMC4XXX_DEVICES) && !defined(COMPONENT_55900)
 extern cy_rslt_t cy_network_random_number_generate( unsigned char *output, size_t len, size_t *olen );
 #endif
 
@@ -57,13 +61,13 @@ extern cy_rslt_t cy_network_random_number_generate( unsigned char *output, size_
 
 int generate_random_number( void *buffer, size_t buffer_length, size_t *output_length )
 {
-#if defined(COMPONENT_CAT5)
+#if defined(COMPONENT_55900)
     *((uint32_t *)buffer) = thread_ap_rbg_rand(1);
     *output_length = 4;
     return 0;
 #elif defined(COMPONENT_MBEDTLS)
     return mbedtls_hardware_poll(NULL, buffer, buffer_length, output_length);
-#elif defined(COMPONENT_NETXSECURE) && defined(COMPONENT_CAT1)
+#elif defined(COMPONENT_NETXSECURE) && !defined(CY_XMC4XXX_DEVICES) && !defined(COMPONENT_55900)
     cy_rslt_t result;
     result = cy_network_random_number_generate(buffer, buffer_length, output_length);
     if(result != CY_RSLT_SUCCESS)
